@@ -75,6 +75,18 @@ class Containers extends React.Component {
               </thead>
               <tbody>
               { containers.map ( (container, index) => {
+                var total = 0,
+                  emptyCount = 0;
+                Object.keys(container).forEach( (con,i) => {
+                  total++;
+                  if ( !container[con] ){
+                    emptyCount++;
+                  }
+                } );
+                // Skip Empty row
+                if ( total === emptyCount ){
+                  return null;
+                }
                 return (
                   <tr key={`row-${index}`}>
                     { Object.keys(container).map( (con,i) => {
@@ -84,6 +96,19 @@ class Containers extends React.Component {
                       }
                       else if ( con === "CONTAINER ID" ){
                         v = <Link to={`/container/${v}`} className="no-style">{v}</Link>;
+                      }
+                      else if ( con === "PORTS" && v.length ){
+                        v = (
+                          <ul>
+                            { v.split(/\,/).map( (line, lineI) => {
+                              return (
+                                <li key={`line-${lineI}`}>
+                                  {line}
+                                </li>
+                              );
+                            } ) }
+                          </ul>
+                        );
                       }
                       return (
                         <td key={`row-${i}`}>{v}</td> 

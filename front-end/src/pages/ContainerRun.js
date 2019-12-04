@@ -1,5 +1,6 @@
 import React from 'react';
 import * as Actions from '../actions';
+import withApiWatch from '../components/withApiWatch';
 import Link from '../components/Link';
 
 class ContainerRun extends React.Component {
@@ -12,11 +13,13 @@ class ContainerRun extends React.Component {
 
   componentDidMount(){
     var key = `image-${this.props.args.imageId}`;
+    this.props.addApiWatchId("container_run");
+    this.props.addApiWatchId(key);
     if ( !this.props[key] ){
       Actions.api(key, `image/inspect/${this.props.args.imageId}`);
     }
   }
-
+ 
   handleForm(e){
     if ( e && e.preventDefault ){
       e.preventDefault();
@@ -50,11 +53,12 @@ class ContainerRun extends React.Component {
         }
       } );
     }
-    Actions.api("container-run", `container/run/${this.props.args.imageId}`, {
+    Actions.api("container_run", `container/run/${this.props.args.imageId}`, {
       method: "post",
       body: JSON.stringify({
         options,
         volumes,
+        additionalArgs: args.additionalArgs || "",
         ports: args.ports,
       })
     });
@@ -123,6 +127,7 @@ class ContainerRun extends React.Component {
     var image = this.props[imageKey] || {},
       args = this.props.args,
       ports = args.ports || {},
+      additionalArgs = args.additionalArgs || "",
       volumes = args.volumes || [];
     if ( Array.isArray(image) ){
       image = image[0];
@@ -144,13 +149,14 @@ class ContainerRun extends React.Component {
               </div>
             </div>
           </div>
+          {/** ==================== FLAGS ==================== **/}
           <p><strong>Flags</strong></p>
           <div className="flex-col">
             <span>
               <label>
                 <input type="checkbox" value={!!args.flagRm} onChange={this.inputListener("flagRm")} checked={args.flagRm ? true : false} /> Don't Persist
               </label>
-              &nbsp;- <em>When a container is stopped, any newly created data will not persist when it starts again</em>
+              &nbsp;- <em>When the container is stopped, it is automatically removed, and can't be restarted.</em>
             </span>
             <span>
               <label>
@@ -159,6 +165,7 @@ class ContainerRun extends React.Component {
               </label>
             </span>
           </div>
+          {/** ==================== PORT MAPPING ==================== **/}
           <p>
             <strong>Port Mapping</strong> <em>(optional)</em><br />
             <em>If left empty, that port will not be exposed to localhost</em>
@@ -216,6 +223,18 @@ class ContainerRun extends React.Component {
               </a>
             </div>
           </div>
+          {/** ==================== VOLUME MAPPING ==================== **/}
+          <p>
+            <strong>Additional Arguments</strong><br />
+            <em>Enter any other options/arguments to the command.</em>
+          </p>
+          <div className="row">
+            <div className="col-6">
+              <div className="flex-col">
+                <input placeholder="docker run arguments" value={additionalArgs} onChange={self.inputListener(`additionalArgs`)} />
+              </div>
+            </div>
+          </div>
           <p></p>
           <div className="row">
             <div className="col-6">
@@ -228,4 +247,4 @@ class ContainerRun extends React.Component {
   }
 }
 
-export default ContainerRun;
+export default withApiWatch(ContainerRun);

@@ -1,12 +1,16 @@
 var express = require('express');
-var bodyParser = require('body-parser');
 var exec = require('child_process').exec;
 var cors = require('cors')
 var app = express();
 
 app.use(cors())
-//app.use( bodyParser.json({limit: '50mb', extended: true}) );
-//app.use( bodyParser.raw() );
+app.use("/", express.static('static-content'))
+
+/**
+ * Express Middleware for converting
+ * the raw body of the request to 
+ * JSON if possible
+ */
 app.use( (req, res, next) => {
   var data = "";
   req.on('data', (chunk) => {
@@ -72,6 +76,25 @@ app.get("/image/inspect/:id", (req, res) => {
   } );
 } );
 
+app.post("/image/:id/perform/:action", (req, res) => {
+  var cmd = "docker image ";
+  cmd += req.params.action + " ";
+  cmd += req.params.id;
+  exec(cmd, (err, out, stderr) => {
+    if ( err ){
+      res.json({
+        "error": ("" + err),
+        "fullError" : err
+      });
+    } else if ( out ){
+      res.json({
+        command: cmd,
+        results: out
+      });
+    }
+  } );
+} );
+
 app.get("/container/inspect/:id", (req, res) => {
   var cmd = "docker inspect " + req.params.id;
   exec(cmd, (err, out, stderr) => {
@@ -104,7 +127,9 @@ var showContainers = (req, res) => {
     }
   } );
 };
+
 app.get("/containers/show/:type", showContainers );
+
 app.get("/containers/show", showContainers );
 
 app.post("/container/:id/perform/:action", (req, res) => {
@@ -154,6 +179,9 @@ app.post("/container/run/:imageId", (req, res) => {
     params.volumes.forEach( (vol) => {
       cmd += ` -v ${vol.local}:${vol.remote}`;
     } );
+  }
+  if ( params.additionalArgs && params.additionalArgs.length ){
+    cmd += ` ${params.additionalArgs}`;
   }
   cmd += ` ${imageId}`;
   exec(cmd, (err, out, stderr) => {

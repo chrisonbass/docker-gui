@@ -18,6 +18,7 @@
 
 .App-link {
   color: #09d3ac;
+  text-decoration: none;
 }
 
 .App-body {
@@ -29,9 +30,49 @@
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
-  padding: 0px 20px;
+  padding: 0px;
   list-style-type: none;
   text-align: left;
+}
+
+.App-nav a {
+  color: #09d3ac;
+  text-decoration: none;
+}
+
+[class^="App-msg-"],
+[class*=" App-msg-"] {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 8px 10px;
+  position: relative;
+}
+
+.App-msg-error {
+  background-color: #f77878;
+  border: solid 1px #d22424;
+  box-shadow: 0px 1px 5px rgba(187, 27, 27, 0.6392156862745098);
+  color: white;
+}
+
+.App-msg-success {
+  background-color: green;
+  border: solid 1px green;
+  color: white;
+}
+
+[class^="App-msg-"] > .close,
+[class*=" App-msg-"] > .close {
+  position: absolute;
+  top: 7px;
+  right: 24px;
+  display: block;
+  width: 10px;
+  height: 10px;
+  font-size: 32px;
+  color: white;
+  text-decoration: none;
 }
 
 .App-nav li {

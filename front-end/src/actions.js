@@ -8,6 +8,31 @@ export const setState = (state = {}) => {
   app.setState(state);
 };
 
+export const setMessage = (message = "", messageType = "success") => {
+  if ( typeof message === "string" && message.length ){
+    app.setState({
+      message,
+      messageType
+    });
+  } 
+  else if ( typeof message !== "string" ){
+    console.error(`setErrorMessage only accepts strings.  A '${(typeof message)}' was provided`);
+  }
+  else {
+    console.error("Trying to call setErrorMessage with an empty string");
+  }
+};
+
+export const clearMessage = (e = null) => {
+  if ( e && e.preventDefault ){
+    e.preventDefault();
+  }
+  app.setState({
+    message: null,
+    messageType: "success"
+  });
+};
+
 export const setArg = (name, value) => {
   var state =  Object.assign( {}, app.state, {
     args: Object.assign({}, app.state.args, {
@@ -61,14 +86,17 @@ export const api = (id, endpoint, params = {}) => {
 
 export const getInitialState = () => {
   var state = {
-    view: "container", // container(s) | image(s) | image-build | container-run
-    args: {
-      type: "all"
-    }
+    view: "unknown", 
+    args: { }
   };
   var loc = window.location.pathname;
   var matchFound = false;
   var matches = [
+    // Matches Home Page /
+    {
+      r: /^\/$/,
+      v: "home"
+    },
     // Matches /image/:id
     {
       r: /\/image\/(.*)/,

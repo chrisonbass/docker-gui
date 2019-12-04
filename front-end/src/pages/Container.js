@@ -1,4 +1,5 @@
 import React from 'react';
+import withApiWatch from '../components/withApiWatch';
 import * as Actions from '../actions';
 import Link from '../components/Link';
 import './Images.css';
@@ -18,14 +19,21 @@ class Container extends React.Component {
     this.mounted = true;
     var id = this.getId(),
       key = `container-${id}`;
+    this.props.addApiWatchId(key);
+    this.props.addApiWatchId("run-command");
     Actions.api(key, `container/inspect/${id}`);
     var self = this;
     this.timer = setInterval(() => {
       if ( self.props[key].isLoading === true ){
         return;
       }
+      if ( self.props[key].error ){
+        clearInterval(self.timer);
+        self.timer = null;
+        return;
+      }
       Actions.api(key, `container/inspect/${id}`);
-    }, 3000 );
+    }, 1000 );
   }
 
   componentWillUnmount(){
@@ -69,6 +77,18 @@ class Container extends React.Component {
         <p>This page show the details and available actions for a Container</p>
         <h2>Details</h2>
         <ul className="inline">
+          { state === "exited" ? [
+            <li key="start">
+              <a href="#" onClick={this.containerCommand("start")}>
+                Start
+              </a>
+            </li>,
+            <li key="remove">
+              <a href="#" className="text-danger" onClick={this.containerCommand("rm")}>
+                Remove
+              </a>
+            </li>,
+          ] : null } 
           { state === "running" ? [
             <li key="stop">
               <a href="#" onClick={this.containerCommand("stop")}>
@@ -163,4 +183,4 @@ class Container extends React.Component {
   }
 }
 
-export default Container;
+export default withApiWatch(Container);

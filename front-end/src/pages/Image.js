@@ -1,4 +1,5 @@
 import React from 'react';
+import withApiWatch from '../components/withApiWatch';
 import * as Actions from '../actions';
 import Link from '../components/Link';
 import './Images.css';
@@ -9,6 +10,7 @@ class Image extends React.Component {
   }
 
   componentDidMount(){
+    this.props.setApiWatchId(`image-${this.getId()}`);
     Actions.api(`image-${this.getId()}`, `image/inspect/${this.getId()}`);
   }
 
@@ -177,4 +179,4 @@ class Image extends React.Component {
   }
 }
 
-export default Image;
+export default withApiWatch(Image);
