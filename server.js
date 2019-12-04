@@ -1,7 +1,79 @@
 var express = require('express');
+var WebSocket = require('ws');
+var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var cors = require('cors')
 var app = express();
+
+var serverPort = process.env.PORT || 8085,
+  socketPort = serverPort + 1;
+
+/**
+ * We use sockets for commands that can take a while to 
+ * run.  Specifically, the image create command
+ */
+const socket = new WebSocket.Server({port: socketPort});
+socket.on('connection', (ws) => {
+  ws.on('message', (req) => {
+    var json;
+    try {
+      json = JSON.parse(req);
+    } catch ( e ){
+      ws.send(JSON.stringify({
+        error: "Invalid message.  Must be a JSON string"
+      }));
+      return;
+    }
+    if ( json && json.type  ){
+      switch ( json.type ){
+        case "build-image":
+          var cmd = "docker",
+            params = ["build"];
+          if ( json.name ){
+            params.push("--tag");
+            params.push(json.name);
+          }
+          if ( json.path ){
+            var path = json.path.replace(/\\{2,}/,'\\');
+            params.push(path);
+          }
+          var out = spawn(cmd, params);
+          out.on('error', function(e){
+            console.error(e);
+            ws.send(JSON.stringify({
+              type: "build-image",
+              error: e.toString()
+            }));
+          });
+          out.stdout.on('data', function(data){
+            ws.send(JSON.stringify({
+              type: "build-image",
+              data: data.toString()
+            }));
+          } );
+          out.stderr.on('data', function(data){
+            ws.send(JSON.stringify({
+              type: "build-image",
+              error: data.toString()
+            }));
+          } );
+          out.on('exit', function(code){
+            ws.send(JSON.stringify({
+              type: 'build-image',
+              data: "Finished with code: " + code,
+              finished: true
+            }));
+          });
+          break;
+      }
+    } else {
+      ws.send(JSON.stringify({
+        error: "Malformed request.  Expecting an object with a 'type' index."
+      }));
+      return;
+    }
+  } );
+} );
 
 app.use(cors())
 app.use("/", express.static('static-content'))
@@ -77,9 +149,14 @@ app.get("/image/inspect/:id", (req, res) => {
 } );
 
 app.post("/image/:id/perform/:action", (req, res) => {
-  var cmd = "docker image ";
-  cmd += req.params.action + " ";
-  cmd += req.params.id;
+  var body = req.body,
+    cmd = `docker image ${req.params.action}`;
+  if ( body && body.options && body.options.length ){
+    body.options.forEach( (opt) => {
+      cmd += ` ${opt}`;
+    } );
+  }
+  cmd += ` ${req.params.id}`;
   exec(cmd, (err, out, stderr) => {
     if ( err ){
       res.json({
@@ -199,7 +276,7 @@ app.post("/container/run/:imageId", (req, res) => {
   } );
 } );
 
-var serverPort = process.env.PORT || 8085;
+
 
 app.listen( serverPort, () => {
   var str = `Node Server started: \nlocalhost:${serverPort}`;

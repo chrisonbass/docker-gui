@@ -1,3 +1,4 @@
+import _ from 'lodash';
 var app = null;
 
 export const setApp = (appInstance) => {
@@ -6,6 +7,13 @@ export const setApp = (appInstance) => {
 
 export const setState = (state = {}) => {
   app.setState(state);
+};
+
+export const clearStateKey = (key) => {
+  if ( app && app.state.hasOwnProperty(key) ){
+    delete app.state[key];
+    app.setState(app.state);
+  }
 };
 
 export const setMessage = (message = "", messageType = "success") => {
@@ -96,6 +104,10 @@ export const getInitialState = () => {
     {
       r: /^\/$/,
       v: "home"
+    },
+    {
+      r: /^\/image\/create$/,
+      v: "image-create"
     },
     // Matches /image/:id
     {

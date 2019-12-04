@@ -100,7 +100,7 @@ class Containers extends React.Component {
                       else if ( con === "PORTS" && v.length ){
                         v = (
                           <ul>
-                            { v.split(/\,/).map( (line, lineI) => {
+                            { v.split(/,/).map( (line, lineI) => {
                               return (
                                 <li key={`line-${lineI}`}>
                                   {line}

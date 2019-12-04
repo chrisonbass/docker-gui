@@ -53,12 +53,13 @@ class Container extends React.Component {
   }
 
   containerCommand(cmd){
-    return ((e) => {
+    var self = this;
+    return (e) => {
       e.preventDefault();
-      Actions.api("run-command", `container/${this.getId()}/perform/${cmd}`, {
+      Actions.api("run-command", `container/${self.getId()}/perform/${cmd}`, {
         method: "post"
       } );
-    }).bind(this);
+    };
   }
 
   render(){
@@ -79,42 +80,42 @@ class Container extends React.Component {
         <ul className="inline">
           { state === "exited" ? [
             <li key="start">
-              <a href="#" onClick={this.containerCommand("start")}>
+              <a href="void" onClick={this.containerCommand("start")}>
                 Start
               </a>
             </li>,
             <li key="remove">
-              <a href="#" className="text-danger" onClick={this.containerCommand("rm")}>
+              <a href="void" className="text-danger" onClick={this.containerCommand("rm")}>
                 Remove
               </a>
             </li>,
           ] : null } 
           { state === "running" ? [
             <li key="stop">
-              <a href="#" onClick={this.containerCommand("stop")}>
+              <a href="void" onClick={this.containerCommand("stop")}>
                 Stop
               </a>
             </li>,
             <li key="pause">
-              <a href="#" onClick={this.containerCommand("pause")}>
+              <a href="void" onClick={this.containerCommand("pause")}>
                 Pause
               </a>
             </li>,
             <li key="restart">
-              <a href="#" onClick={this.containerCommand("restart")}>
+              <a href="void" onClick={this.containerCommand("restart")}>
                 Restart
               </a>
             </li>
           ] : null }
           { state === "paused" ? (
             <li>
-              <a href="#" onClick={this.containerCommand("unpause")}>
+              <a href="void" onClick={this.containerCommand("unpause")}>
                 Unpause
               </a>
             </li>
           ) : null }
           <li>
-            <a key="full-link" href="#" onClick={this.toggleShowFullDetails.bind(this)}>
+            <a key="full-link" href="void" onClick={this.toggleShowFullDetails.bind(this)}>
               { isShowFull ? "Hide Raw Details" : "Show Raw Details" }
             </a> 
           </li>

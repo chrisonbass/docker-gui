@@ -2,13 +2,14 @@ import React from 'react';
 import * as Actions from './actions';
 import Images from './pages/Images';
 import Image from './pages/Image';
+import ImageCreate from './pages/ImageCreate';
 import Container from './pages/Container';
 import Containers from './pages/Containers';
 import ContainerRun from './pages/ContainerRun';
 import PageNotFound from './pages/PageNotFound';
 import Home from './pages/Home';
 import Link from './components/Link';
-import './App.css';
+import './App.scss';
 
 class App extends React.Component {
   constructor(props){
@@ -55,6 +56,11 @@ class App extends React.Component {
       // Images List Page
       case "images":
         ret = <Images {...this.state} />;
+        break;
+
+      // Image Create Page
+      case "image-create":
+        ret = <ImageCreate {...this.state} />;
         break;
 
       // Image Summary Page
@@ -106,7 +112,7 @@ class App extends React.Component {
         {/** =========== OUTPUT ERROR ============= **/}
         { this.state.message && ("" + this.state.message).length ? (
           <div className={`App-msg-${this.state.messageType === "success" ? "success" : "error"}`}>
-            <a href="#" onClick={Actions.clearMessage} className="close">x</a>
+            <a href="void" onClick={Actions.clearMessage} className="close">x</a>
             <pre>
               {this.state.message}
             </pre>

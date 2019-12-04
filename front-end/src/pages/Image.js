@@ -2,6 +2,7 @@ import React from 'react';
 import withApiWatch from '../components/withApiWatch';
 import * as Actions from '../actions';
 import Link from '../components/Link';
+import _ from 'lodash';
 import './Images.css';
 
 class Image extends React.Component {
@@ -10,8 +11,9 @@ class Image extends React.Component {
   }
 
   componentDidMount(){
-    this.props.setApiWatchId(`image-${this.getId()}`);
-    Actions.api(`image-${this.getId()}`, `image/inspect/${this.getId()}`);
+    this.props.addRepeatingApi(`image-${this.getId()}`, `image/inspect/${this.getId()}`);
+    this.props.addApiWatchId(`image-${this.getId()}`);
+    this.props.addApiWatchId(`run-img-command`);
   }
 
   toggleShowFullDetails(e){
@@ -22,8 +24,26 @@ class Image extends React.Component {
     Actions.setArg("isShowFull", isShowFull);
   }
 
+  imageCommand(cmd){
+    var self = this;
+    return (e) => {
+      e.preventDefault();
+      var params = {
+        method: "post"
+      };
+      if ( cmd === "force-rm" ){
+        cmd = "rm";
+        params.body = JSON.stringify({
+          options: ["-f"]
+        });
+      }
+      Actions.api("run-img-command", `image/${self.getId()}/perform/${cmd}`, params );
+    };
+  }
+
   render(){
     var image = this.props[`image-${this.getId()}`] || {},
+      isLoading = _.get(this.props,`image-${this.getId()}.isLoading`) || false,
       isShowFull = this.props.args.isShowFull || false;
     if ( Array.isArray(image) ){
       image = image[0]
@@ -33,14 +53,27 @@ class Image extends React.Component {
         <h1>Image {this.props.args.id}</h1>
         <p>This page show the details and available actions for an Image</p>
         <h2>Details</h2>
+        { isLoading && !image.Size ? (
+          <p>Please wait while the image details is loaded</p>
+        ) : null }
         <ul className="inline">
           <li>
             <Link to={`/container/run/${this.getId()}`}>
-              Start a Container using this Image
+              Create a Container
             </Link>
           </li>
           <li>
-            <a key="full-link" href="#" onClick={this.toggleShowFullDetails.bind(this)}>
+            <a href="void" className="text-danger" onClick={this.imageCommand("rm")}>
+              Delete Image
+            </a>
+          </li>
+          <li>
+            <a href="void" className="text-danger" onClick={this.imageCommand("force-rm")}>
+              Force Delete Image
+            </a>
+          </li>
+          <li>
+            <a key="full-link" href="void" onClick={this.toggleShowFullDetails.bind(this)}>
               { isShowFull ? "Hide Raw Details" : "Show Raw Details" }
             </a> 
           </li>

@@ -1,7 +1,6 @@
 import React from 'react';
 import * as Actions from '../actions';
 import withApiWatch from '../components/withApiWatch';
-import Link from '../components/Link';
 
 class ContainerRun extends React.Component {
   constructor(props){
@@ -86,6 +85,7 @@ class ContainerRun extends React.Component {
             flag: !self.state.flag
           });
           break;
+
         case "flagTty":
           Actions.setArg("flagTty", self.props.args.flagTty === true ? false : true);
           break;

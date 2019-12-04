@@ -13,11 +13,13 @@ class Images extends React.Component {
       <div className='Images'>
         <h1>Images</h1>
         <p>This page lists the available images</p>
-
-        { images && images.isLoading === true ? (
-          <p>Loading...</p>
-        ) : null }
-
+        <ul>
+          <li>
+            <Link to="/image/create">
+              Create new Image
+            </Link>
+          </li>
+        </ul>
         { images && images.output ? (
           <table className="border">
             <thead>
@@ -30,6 +32,9 @@ class Images extends React.Component {
             </thead>
             <tbody>
               { images.output.map( (image, index) => {
+                if ( !image['IMAGE ID'] ){
+                  return null;
+                }
                 return (
                   <tr key={image['IMAGE ID']}>
                     <td>
