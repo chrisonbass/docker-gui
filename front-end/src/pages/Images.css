@@ -1,0 +1,12 @@
+.Image-body {
+  display: flex;
+  flex-direction: row;
+}
+
+.Image-body > div:first-child {
+  flex-grow: 1;
+}
+
+.Image-body > div:last-child {
+  min-width: 250px;
+}

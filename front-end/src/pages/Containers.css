@@ -1,0 +1,29 @@
+.Containers-options {
+  padding: 10px 0px;
+}
+
+.Containers-options > * {
+  margin-right: 10px;
+}
+
+.Containers-options > *:last-child {
+  margin-right: 0px;
+}
+
+.toggler:before {
+  display: inline-block;
+  content: "";
+  width: 10px;
+  height: 10px;
+  border: solid 1px black;
+  margin-right: 5px;
+}
+
+.toggler.checked:before {
+  background-color: cyan;
+}
+
+a.toggler {
+  text-decoration: none;
+  color: #555;
+}

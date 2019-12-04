@@ -1,0 +1,175 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+}
+
+.App-header {
+  background-color: #282c34;
+  display: flex;
+  flex-direction: row;
+  align-items: left;
+  color: white;
+  padding: 10px 20px;
+  justify-content: space-between;
+}
+
+.App-link {
+  color: #09d3ac;
+}
+
+.App-body {
+  text-align: left;
+  padding: 0px 20px;
+}
+
+.App-nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 0px 20px;
+  list-style-type: none;
+  text-align: left;
+}
+
+.App-nav li {
+  margin-right: 20px;
+}
+
+.App-nav li:last-child {
+  margin-right: 0px;
+}
+
+ul.no-bullets {
+  padding-left: 0px;
+  list-style-type: none;
+}
+
+table th,
+table td {
+  padding: 6px 10px;
+}
+
+table ul {
+  margin: 0px;
+}
+
+table.border {
+  border-collapse: collapse;
+  border: solid 1px #ccc;
+}
+
+table.border td,
+table.border th {
+  border: solid 1px #ccc;
+}
+
+table.border th {
+  border-bottom-size: 2px;
+}
+
+table.border td:last-child,
+table.border th:last-child {
+  border-right: none;
+}
+.row {
+  display: block;
+  margin: 0px -10px;
+  padding: 0px;
+  box-sizing: border-box;
+}
+.row:after,
+.row:before {
+  content: "";
+  display: block;
+  clear: both;
+}
+[class^="col-"],
+[class*=" col-"] {
+  box-sizing: border-box;
+  padding-left: 10px;
+  padding-right: 10px;
+  display: inline;
+  float: left;
+}
+.col-1 {
+  width: calc(100% / 12);
+}
+.col-2 {
+  width: calc(100% / 6);
+}
+.col-3 {
+  width: calc(100% / 4);
+}
+.col-4 {
+  width: calc(100% / 3);
+}
+.col-5 {
+  width: calc(100% / 2.4);
+}
+.col-5 {
+  width: calc(100% / 2.4);
+}
+.col-6 {
+  width: calc(100% / 2);
+}
+.col-7 {
+  width: calc(100% / 1.714285714285714);
+}
+.col-8 {
+  width: calc(100% / 1.5);
+}
+.col-9 {
+  width: calc(100% / 1.333333333333333);
+}
+.col-10 {
+  width: calc(100% / 1.2);
+}
+.col-11 {
+  width: calc(100% / 1.090909090909091);
+}
+.col-12 {
+  width: 100%;
+}
+
+[class^="flex-"],
+[class*=" flex-"] {
+  display: flex;
+}
+.flex-row-r {
+  flex-direction: row-reverse;
+}
+.flex-row {
+  flex-direction: row;
+}
+.flex-col-r {
+  flex-direction: column-reverse;
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-justify-evenly {
+  justify-content: space-evenly;
+}
+.flex-justify-between {
+  justify-content: space-between;
+}
+.flex-justify-around {
+  justify-content: space-around;
+}
+
+.box {
+  padding: 6px 10px;
+  border: solid 1px #ccc;
+  line-height: 1.2rem;
+  font-size: 1rem;
+}
+
+a.no-style {
+  text-decoration: none;
+}
+.text-danger {
+  color: red;
+}
