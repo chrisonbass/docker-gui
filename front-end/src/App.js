@@ -1,5 +1,7 @@
 import React from 'react';
 import * as Actions from './actions';
+import Volume from './pages/Volume';
+import Volumes from './pages/Volumes';
 import Images from './pages/Images';
 import Image from './pages/Image';
 import ImageCreate from './pages/ImageCreate';
@@ -78,6 +80,16 @@ class App extends React.Component {
         ret = <Container {...this.state} />;
         break;
         
+      // Volume Summary Page
+      case "volume":
+        ret = <Volume {...this.state} />;
+        break;
+
+      // Volumes List Page
+      case "volumes":
+        ret = <Volumes {...this.state} />;
+        break;
+        
       // Home Page
       case "home":
         ret = <Home />;
@@ -103,6 +115,9 @@ class App extends React.Component {
             </li>
             <li>
               <Link to="/images">Images</Link>
+            </li>
+            <li>
+              <Link to="/volumes">Volumes</Link>
             </li>
           </ul>
           <p>

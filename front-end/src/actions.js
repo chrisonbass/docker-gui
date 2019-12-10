@@ -1,4 +1,3 @@
-import _ from 'lodash';
 var app = null;
 
 export const setApp = (appInstance) => {
@@ -154,7 +153,21 @@ export const getInitialState = () => {
         };
       }
     },
-
+    // Matches /volumes
+    {
+      r: /\/volumes\/?$/,
+      v: "volumes"
+    },
+    // Matches /volume/:id
+    {
+      r: /\/volume\/(.*)/,
+      v: "volume",
+      m: (match) => {
+        return {
+          id: match[1]
+        };
+      }
+    },
   ];
   matches.forEach( (check) => {
     if ( matchFound === true ){

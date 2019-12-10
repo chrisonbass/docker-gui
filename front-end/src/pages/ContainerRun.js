@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Actions from '../actions';
 import withApiWatch from '../components/withApiWatch';
+import _ from 'lodash';
 
 class ContainerRun extends React.Component {
   constructor(props){
@@ -17,6 +18,7 @@ class ContainerRun extends React.Component {
     if ( !this.props[key] ){
       Actions.api(key, `image/inspect/${this.props.args.imageId}`);
     }
+    Actions.api("volumes", "volumes");
   }
  
   handleForm(e){
@@ -25,7 +27,7 @@ class ContainerRun extends React.Component {
     }
     var args = this.props.args || {},
       options = [],
-      volumes = [];
+      mounts = [];
     var map = {
       flagRm: "--rm",
       flagTty: "-t"
@@ -45,10 +47,10 @@ class ContainerRun extends React.Component {
         value: args.name
       });
     }
-    if ( args.volumes && args.volumes.length ){
-      args.volumes.forEach( (vol) => {
+    if ( args.mounts && args.mounts.length ){
+      args.mounts.forEach( (vol) => {
         if ( vol.local && vol.remote ){
-          volumes.push(vol);
+          mounts.push(vol);
         }
       } );
     }
@@ -56,11 +58,23 @@ class ContainerRun extends React.Component {
       method: "post",
       body: JSON.stringify({
         options,
-        volumes,
+        mounts,
         additionalArgs: args.additionalArgs || "",
         ports: args.ports,
       })
     });
+  }
+
+  addBountMount(e){
+    if ( e && e.preventDefault ){
+      e.preventDefault();
+    }
+    var mounts = this.props.args.mounts || [];
+    mounts.push({
+      local: "",
+      remote: ""
+    });
+    Actions.setArg("mounts", mounts);
   }
 
   addVolume(e){
@@ -69,7 +83,7 @@ class ContainerRun extends React.Component {
     }
     var volumes = this.props.args.volumes || [];
     volumes.push({
-      local: "",
+      volumeId: "",
       remote: ""
     });
     Actions.setArg("volumes", volumes);
@@ -91,28 +105,33 @@ class ContainerRun extends React.Component {
           break;
 
         default:
-          var match;
+          var match,
+            i,
+            mounts,
+            argType;
           if ( name.match(/port_/) ){
             var ports = this.props.args.ports || {};
             ports[name.replace(/port_/,'')] = e.target.value;
             Actions.setArg("ports", ports);
           } 
-          else if ( match = name.match(/volume-(\d+)-(local|remote)/) ){
-            var i = match[1],
-              type = match[2];
-            var volumes = self.props.args.volumes || [];
-            volumes = volumes.slice();
-            if ( volumes[i] ){
-              volumes[i][type] = e.target.value;
+          else if ( match = name.match(/(mounts|volumes)-(\d+)-(volumeId|local|remote)/) ){
+            argType = match[1];
+            i = match[2];
+            var type = match[3];
+            mounts = self.props.args[argType] || [];
+            mounts = mounts.slice();
+            if ( mounts[i] ){
+              mounts[i][type] = e.target.value;
             }
-            Actions.setArg("volumes", volumes);
+            Actions.setArg(argType, mounts);
           }
-          else if ( match = name.match(/remove-volume-(\d+)/) ){
+          else if ( match = name.match(/remove-(volumes|mounts)-(\d+)/) ){
             e.preventDefault();
-            var i = match[1];
-            var volumes = self.props.args.volumes ? self.props.args.volumes.slice() : [];
-            volumes.splice(i,1);
-            Actions.setArg("volumes", volumes);
+            argType = match[1];
+            i = match[2];
+            mounts = ( _.get(self.props,`args.${argType}`) || [] ).slice();
+            mounts.splice(i,1);
+            Actions.setArg(argType, mounts);
           }
           else {
             Actions.setArg(name, e.target.value);
@@ -128,7 +147,9 @@ class ContainerRun extends React.Component {
       args = this.props.args,
       ports = args.ports || {},
       additionalArgs = args.additionalArgs || "",
-      volumes = args.volumes || [];
+      mounts = args.mounts || [],
+      volumes = args.volumes || [],
+      availableVolumes = _.get(this.props, "volumes.output") || [];
     if ( Array.isArray(image) ){
       image = image[0];
     }
@@ -193,23 +214,23 @@ class ContainerRun extends React.Component {
             ) : "No Exposed Ports" }
             </div>
           </div>
-          {/** ==================== VOLUME MAPPING ==================== **/}
+          {/** ==================== BIND MOUNT MAPPING ==================== **/}
           <p>
             <strong>Volume Binding Mapping</strong> <em>(optional)</em><br />
             <em>Binds a local directory to a directory in the container.  Please use full paths</em>
           </p>
           <div className="row">
             <div className="col-6">
-            { volumes.map( (vol,index) => {
+            { mounts.map( (vol,index) => {
               return (
                 <div key={`vol-${index}`} className="flex-row flex-justify-between">
                   <div>
-                    <input placeholder="local" value={vol.local} onChange={self.inputListener(`volume-${index}-local`)} />
+                    <input placeholder="local" value={vol.local} onChange={self.inputListener(`mounts-${index}-local`)} />
                   </div>
                   <span>=></span>
                   <div>
-                    <input placeholder="container" value={vol.remote} onChange={self.inputListener(`volume-${index}-remote`)} /> &nbsp;
-                    <a href="#" onClick={this.inputListener(`remove-volume-${index}`)} className="no-style text-danger">- Delete</a>
+                    <input placeholder="container" value={vol.remote} onChange={self.inputListener(`mounts-${index}-remote`)} /> &nbsp;
+                    <a href="void" onClick={this.inputListener(`remove-mounts-${index}`)} className="no-style text-danger">- Delete</a>
                   </div>
                 </div>
               );
@@ -218,12 +239,50 @@ class ContainerRun extends React.Component {
           </div>
           <div className="row">
             <div className="col-6">
-              <a href="#" onClick={this.addVolume.bind(this)}>
-                + Add a Volume
+              <a href="void" onClick={this.addBountMount.bind(this)}>
+                + Add a Local Mount
               </a>
             </div>
           </div>
           {/** ==================== VOLUME MAPPING ==================== **/}
+          <p>
+            <strong>Volume Mapping</strong> <em>(optional)</em><br />
+            <em>Binds a docker volume to a directory in the container.  Please use full paths</em>
+          </p>
+          <div className="row">
+            <div className="col-6">
+            { volumes.map( (vol,index) => {
+              return (
+                <div key={`vol-${index}`} className="flex-row flex-justify-between">
+                  <div>
+                    <div className="flex-col">
+                      <select value={vol.volumeId || ""} onChange={self.inputListener(`volumes-${index}-volumeId`)}>
+                        { availableVolumes.map( (vol, vi) => {
+                          return (
+                            <option key={vol['VOLUME NAME']}>{vol['VOLUME NAME']}</option>
+                          );
+                        } ) }
+                      </select>
+                    </div>
+                  </div>
+                  <span>=></span>
+                  <div>
+                    <input placeholder="container" value={vol.remote} onChange={self.inputListener(`volume-${index}-remote`)} /> &nbsp;
+                    <a href="void" onClick={this.inputListener(`remove-volumes-${index}`)} className="no-style text-danger">- Delete</a>
+                  </div>
+                </div>
+              );
+            } ) }
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-6">
+              <a href="void" onClick={this.addVolume.bind(this)}>
+                + Add a Volume
+              </a>
+            </div>
+          </div>
+          {/** ==================== Additional Arguments ==================== **/}
           <p>
             <strong>Additional Arguments</strong><br />
             <em>Enter any other options/arguments to the command.</em>

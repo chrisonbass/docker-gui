@@ -92,7 +92,7 @@ class ImageCreate extends React.Component {
           <span className={`toggler danger${(socketOpen === true ? " checked" : "")}`}> 
             Connection Open
           </span><br />
-          <em>This page uses WebSockets to stream the output of the build process to this page.  If the indicator above is red, there is no connection.</em>
+          <em>This page uses WebSockets to stream the output of the build process to this page.  If the indicator above is red, there is no connection.</em><br />
           { buildStarted ? (
             <span className={`toggler danger${(buildStarted === true ? " checked" : "")}`}> 
               Build Started
