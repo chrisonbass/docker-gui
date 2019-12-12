@@ -6,7 +6,7 @@ export default function(props){
     <div>
       <h1>404 - Page Not Found</h1>
       <p>
-        Return to <Link to="/containers/show/running">Containers</Link> page.
+        Return to the <Link to="/">Home page</Link>.
       </p>
     </div>
   );

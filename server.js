@@ -137,7 +137,7 @@ socket.on('connection', (ws) => {
             }));
           }
           else {
-            var volName = container + "-backup-vol-" + hash(),
+            var volName = json.volumeName || container + "-backup-vol-" + hash(),
               backupDir = "backup-" + hash(),
               tmpContainerName = "tmp-" + hash(),
               imgName = container + "-temp-image-" + hash();
@@ -229,12 +229,15 @@ app.use( (req, res, next) => {
 
 var parseColumnsRows = (body) => {
   var lines = body.split(/\n|\r/);
-  var columns = lines.shift().split(/\s{2,}/);
-  var rows = lines.map( (line) => {
+  var columns = lines.shift().split(/\s{2,}/).map( col => col.trim() );
+  var rows = lines.map( (line, lineIndex) => {
     var ret = {},
-      row = line.split(/\s{2,}/);
+      row = line.split(/\s{2,}/).map( col => col.trim() );
     columns.forEach( (col, index) => {
-      if ( col && row[index] ){
+      if ( !col ){
+        return;
+      }
+      if ( col ){
         ret[col] = row[index] || "";
       }
     } );
@@ -375,6 +378,11 @@ app.post("/container/run/:imageId", (req, res) => {
   }
   if ( params.volumes && params.volumes.length ){
     params.volumes.forEach( (vol) => {
+      cmd += ` -v ${vol.volumeId}:${vol.remote}`;
+    } );
+  }
+  if ( params.mounts && params.mounts.length ){
+    params.mounts.forEach( (vol) => {
       cmd += ` -v ${vol.local}:${vol.remote}`;
     } );
   }

@@ -2,23 +2,40 @@ import React from 'react';
 import _ from 'lodash';
 import Link from '../components/Link';
 import withApiWatch from '../components/withApiWatch';
+import * as Actions from '../actions';
 
 class Volumes extends React.Component {
   componentDidMount(){
     this.props.addRepeatingApi("volumes", "volumes");
+    this.props.addApiWatchId("volume-create");
+  }
+
+  handleNewVolume(e){
+    if ( e && e.preventDefault ){
+      e.preventDefault();
+    }
+    var volumeName = window.prompt("Please enter a name for the Volume.");
+    if ( volumeName ){
+      Actions.api("volume-create", "volume/create", {
+        method: "post",
+        body: JSON.stringify({
+          name: volumeName
+        })
+      } );
+    }
   }
 
   render(){
     var volumes = _.get(this.props, "volumes.output") || [];
     return (
-      <div className='Images'>
-        <h1>Images</h1>
-        <p>This page lists the available images</p>
+      <div className='Volumes'>
+        <h1>Volumes</h1>
+        <p>This page lists the available volumes.</p>
         <ul>
           <li>
-            <Link to="/volume/create">
-              Create new Image
-            </Link>
+            <a href="void" onClick={this.handleNewVolume.bind(this)}>
+              Create new Volume
+            </a>
           </li>
         </ul>
         { volumes && volumes.length ? (

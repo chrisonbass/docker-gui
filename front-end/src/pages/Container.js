@@ -1,5 +1,6 @@
 import React from 'react';
 import withApiWatch from '../components/withApiWatch';
+import withSocket from '../components/withSocket';
 import * as Actions from '../actions';
 import Link from '../components/Link';
 import _ from 'lodash';
@@ -61,15 +62,28 @@ class Container extends React.Component {
     var self = this;
     return (e) => {
       e.preventDefault();
-      Actions.api("run-command", `container/${self.getId()}/perform/${cmd}`, {
-        method: "post"
-      } );
+      if ( cmd == "create-dir-backup" ){
+        var path = window.prompt("Please enter the full path to the container's folder.","/app");
+        if ( path ){
+          var volName = window.prompt("Please enter a name for the volume.");
+          this.props.sendMessage({
+            sourceDirectory: path,
+            containerId: this.getId(),
+            volumeName: volName
+          });
+        }
+      } else {
+        Actions.api("run-command", `container/${self.getId()}/perform/${cmd}`, {
+          method: "post"
+        } );
+      }
     };
   }
 
   render(){
     var container = this.props[`container-${this.getId()}`] || {},
-      isShowFull = this.props.args.isShowFull || false;
+      isShowFull = this.props.args.isShowFull || false,
+      isSocketOpen = _.get(this.props, "args.socketOpen");
     if ( Array.isArray(container) ){
       container = container[0];
     }
@@ -82,6 +96,9 @@ class Container extends React.Component {
       <div className='Image'>
         <h1>Container {this.props.args.id}</h1>
         <p>This page show the details and available actions for a Container</p>
+        <span className={`toggler danger${(isSocketOpen === true ? " checked" : "")}`}> 
+          Connection Open
+        </span><br />
         <h2>Details</h2>
         <ul className="inline">
           { state === "exited" ? [
@@ -97,6 +114,7 @@ class Container extends React.Component {
             </li>,
           ] : null } 
           { state === "running" ? [
+
             <li key="stop">
               <a href="void" onClick={this.containerCommand("stop")}>
                 Stop
@@ -110,6 +128,11 @@ class Container extends React.Component {
             <li key="restart">
               <a href="void" onClick={this.containerCommand("restart")}>
                 Restart
+              </a>
+            </li>,
+            <li key="create-dir-backup">
+              <a href="void" onClick={this.containerCommand("create-dir-backup")}>
+                Create Volume from Container Directory
               </a>
             </li>
           ] : null }
@@ -200,4 +223,4 @@ class Container extends React.Component {
   }
 }
 
-export default withApiWatch(Container);
+export default withSocket(withApiWatch(Container));

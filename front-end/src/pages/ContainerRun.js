@@ -27,7 +27,8 @@ class ContainerRun extends React.Component {
     }
     var args = this.props.args || {},
       options = [],
-      mounts = [];
+      mounts = [],
+      volumes = [];
     var map = {
       flagRm: "--rm",
       flagTty: "-t"
@@ -54,11 +55,19 @@ class ContainerRun extends React.Component {
         }
       } );
     }
+    if ( args.volumes && args.volumes.length ){
+      args.volumes.forEach( (vol) => {
+        if ( vol.volumeId && vol.remote ){
+          volumes.push(vol);
+        }
+      } );
+    }
     Actions.api("container_run", `container/run/${this.props.args.imageId}`, {
       method: "post",
       body: JSON.stringify({
         options,
         mounts,
+        volumes,
         additionalArgs: args.additionalArgs || "",
         ports: args.ports,
       })
@@ -257,6 +266,7 @@ class ContainerRun extends React.Component {
                   <div>
                     <div className="flex-col">
                       <select value={vol.volumeId || ""} onChange={self.inputListener(`volumes-${index}-volumeId`)}>
+                        <option>Select a Volume</option>
                         { availableVolumes.map( (vol, vi) => {
                           return (
                             <option key={vol['VOLUME NAME']}>{vol['VOLUME NAME']}</option>
@@ -267,7 +277,7 @@ class ContainerRun extends React.Component {
                   </div>
                   <span>=></span>
                   <div>
-                    <input placeholder="container" value={vol.remote} onChange={self.inputListener(`volume-${index}-remote`)} /> &nbsp;
+                    <input placeholder="container" value={vol.remote} onChange={self.inputListener(`volumes-${index}-remote`)} /> &nbsp;
                     <a href="void" onClick={this.inputListener(`remove-volumes-${index}`)} className="no-style text-danger">- Delete</a>
                   </div>
                 </div>

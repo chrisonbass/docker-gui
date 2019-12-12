@@ -52,6 +52,27 @@ export default function(WrapperComponent){
       };
     }
 
+    sendMessage(msg){
+      var message;
+      var isOpen = _.get(this.props, "args.socketOpen");
+      if ( typeof msg === "object" ){
+        if ( !Array.isArray(msg) && !msg.type ){
+          message = JSON.stringify(
+            Object.assign( {}, {
+              type: this.type
+            }, msg )
+          );
+        } else {
+          message = JSON.stringify(msg);
+        }
+      } else {
+        message = "" + msg;
+      }
+      if ( message && isOpen ){
+        this.socket.send(message);
+      }
+    }
+
     render(){
       var self = this;
       return (
@@ -61,6 +82,7 @@ export default function(WrapperComponent){
               self.stdout = r;
             }
           }}
+          sendMessage={this.sendMessage.bind(this)}
           setSocketKey={(key) => {
             self.type = key;
           }}

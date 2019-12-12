@@ -158,6 +158,11 @@ export const getInitialState = () => {
       r: /\/volumes\/?$/,
       v: "volumes"
     },
+    // Match /volume/create
+    {
+      r: /\/volume\/create$/,
+      v: "volume-create"
+    },
     // Matches /volume/:id
     {
       r: /\/volume\/(.*)/,
