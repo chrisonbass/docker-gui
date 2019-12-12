@@ -74,6 +74,12 @@ socket.on('connection', (ws) => {
             params.push("--tag");
             params.push(json.name);
           }
+          if ( json.buildArgs ){
+            json.buildArgs.forEach( (arg) => {
+              params.push("--build-arg");
+              params.push(`${arg.name}=${arg.value}`);
+            } );
+          }
           if ( json.path ){
             var path = json.path.replace(/\\{2,}/,'\\');
             params.push(path);

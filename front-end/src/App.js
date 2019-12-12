@@ -102,6 +102,15 @@ class App extends React.Component {
     return ret;
   }
 
+  handleLoadSwitch(e){
+    if ( e && e.preventDefault ){
+      e.preventDefault();
+    }
+    Actions.setState({
+      isLoadArgs: !this.state.isLoadArgs
+    });
+  }
+
   render(){
     return (
       <div className="App">
@@ -136,6 +145,29 @@ class App extends React.Component {
 
         <div className="App-body">
           { this.route(this.state.view) }
+        </div>
+        <p></p>
+        <div className="App-footer">
+          <div className="row">
+            <div className="col-6" style={{textAlign:'left'}}>
+            { this.state.isLoadArgs === true ? (
+              <div>
+                <strong>Please select the Args json file to load</strong><br />
+                <button onClick={this.handleLoadSwitch.bind(this)}>Show Current Args</button><br />
+                <input type="file" onChange={Actions.handleLoadArgs} />
+              </div>
+            ) : (
+              <div>
+                <strong>Current Page Args</strong><br />
+                <button onClick={Actions.outputArgs}>Save Args</button><span>&nbsp;</span>
+                <button onClick={this.handleLoadSwitch.bind(this)}>Load Args</button><br />
+                <pre>
+                  { Actions.getArgsDisplay() }
+                </pre>
+              </div>
+            ) }
+            </div>
+          </div>
         </div>
       </div>
     );

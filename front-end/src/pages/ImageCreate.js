@@ -1,54 +1,15 @@
 import React from 'react';
 import withApiWatch from '../components/withApiWatch';
+import withSocket from '../components/withSocket';
 import * as Actions from '../actions';
 import _ from 'lodash';
 
 class ImageCreate extends React.Component {
   constructor(props){
     super(props); 
-    var self = this;
-    Actions.setArg("socketOpen", false);
-    this.socket = new WebSocket("ws://localhost:8086");
-    this.socket.onopen = () => {
-      Actions.setArg("socketOpen", true);
-    };
-    this.socket.onclose = () => {
-      Actions.setArg("socketOpen", false);
-    };
-    this.socket.onmessage = (msg) => {
-      var data;
-      try {
-        data = JSON.parse(msg.data);
-      } catch ( e ) {
-        return;
-      }
-      if ( data && data.type === "build-image" ){
-        if ( data && ( data.data || data.error ) ){
-          var output = _.get(self.props,"args.output") || [];
-          var line = data.data || data.error;
-          if ( line.match(/^\(/) ){
-            if ( output.length && output[output.length - 1].match(/^\(/) ){
-              output[output - 1] = line;
-            } else {
-              output.push(line);
-            }
-          } else {
-            output.push(line);
-          }
-          Actions.setArg("output", output);
-        }
-        if ( data && data.finished === true ){
-          Actions.setArg("buildStarted", false);
-        }
-        setTimeout( () => {
-          if ( self.stdout ){
-            self.stdout.scrollTop = self.stdout.scrollHeight;
-          }
-        }, 100 );
-      }
-    };
-
-    this.stdout = null;
+    if ( this.props.setSocketKey ){
+      this.props.setSocketKey("build-image");
+    }
   }
 
   handleFormSubmit(e){
@@ -58,15 +19,15 @@ class ImageCreate extends React.Component {
     var {
       path,
       name,
+      buildArgs,
       socketOpen
     } = this.props.args;
     if ( path && socketOpen ){
-      this.socket.send(JSON.stringify({
-        type: "build-image",
+      this.props.sendMessage({
         name,
-        path
-      }));
-      Actions.setArg("buildStarted", true);
+        path,
+        buildArgs
+      });
     } 
     else if ( !socketOpen ){
       Actions.setMessage("Socket is not connected.  Please refresh the page.", "error");
@@ -76,13 +37,44 @@ class ImageCreate extends React.Component {
     }
   }
 
+  handleAddArg(e){
+    if ( e && e.preventDefault ){
+      e.preventDefault();
+    }
+    var buildArgs = ( _.get(this.props,"args.buildArgs") || [] ).slice();
+    buildArgs.push({
+       name: "",
+      value: ""
+    });
+    Actions.setArg("buildArgs", buildArgs);
+  }
+
+  getArgChangeListener(index, key){
+    var self = this;
+    return (e) => {
+      var args = ( _.get(self.props, "args.buildArgs") || [] ).slice();
+      if ( key === "delete" && e && e.preventDefault ){
+        e.preventDefault();
+        args.splice(index, 1);
+        Actions.setArg("buildArgs", args);
+        return;
+      }
+      if ( args[index] ){
+        var newArg = Object.assign({}, args[index], {
+          [key]: e.target.value
+        } );
+        args.splice(index, 1, newArg);
+        Actions.setArg("buildArgs", args);
+      }
+    };
+  }
+
   render(){
     var socketOpen = _.get(this.props,"args.socketOpen") || false,
       output = _.get(this.props, "args.output"),
-      buildStarted = _.get(this.props, "args.buildStarted") || false,
       path = _.get(this.props,"args.path") || "",
-      name = _.get(this.props,"args.name") || "",
-      self = this;
+      buildArgs = _.get(this.props, "args.buildArgs"),
+      name = _.get(this.props,"args.name") || "";
 
     return (
       <div className="Image-create">
@@ -93,11 +85,6 @@ class ImageCreate extends React.Component {
             Connection Open
           </span><br />
           <em>This page uses WebSockets to stream the output of the build process to this page.  If the indicator above is red, there is no connection.</em><br />
-          { buildStarted ? (
-            <span className={`toggler danger${(buildStarted === true ? " checked" : "")}`}> 
-              Build Started
-            </span>
-          ) : null }
         </p>
         <form onSubmit={this.handleFormSubmit.bind(this)}>
           <div className="row">
@@ -134,6 +121,38 @@ class ImageCreate extends React.Component {
               </div>
             </div>
           </div>
+          <div className="row">
+            <div className="col-6">
+              <div className="flex-col">
+                <p>
+                  <strong>Build Args</strong><br />
+                  Arguments placed here will be replace any ARG/ENV values 
+                </p>
+                { buildArgs && buildArgs.length ? (
+                  buildArgs.map( (arg, index) => {
+                    return (
+                      <div key={`arg-${index}`} className="flex-fill">
+                        <div className="flex-col" style={{marginRight: "10px"}}>
+                          <strong>Name</strong>
+                          <input value={arg.name} onChange={this.getArgChangeListener(index, "name")} />
+                        </div>
+                        <div className="flex-col" style={{marginRight: "10px"}}>
+                          <strong>Value</strong>
+                          <input value={arg.value} onChange={this.getArgChangeListener(index, "value")} />
+                        </div>
+                        <a href="void" className="text-danger" onClick={this.getArgChangeListener(index, "delete")}>
+                          - Delete
+                        </a>
+                      </div>
+                    );
+                  } )
+                ) : null }
+                <a href="void" onClick={this.handleAddArg.bind(this)}>
+                  + add Arg
+                </a>
+              </div>
+            </div>
+          </div>
           <p></p>
           <div className="row">
             <div className="col-12">
@@ -143,13 +162,7 @@ class ImageCreate extends React.Component {
         </form>
         { output ? [
           <p key='blank'></p>,
-          <pre 
-            className="console" 
-            key="console"
-            ref={ (r) => {
-              self.stdout = r;
-            } }
-          >
+          <pre className="console" key="console" ref={this.props.stdoutRef}>
             {output.join("")}
           </pre>
         ] : null }
@@ -158,4 +171,4 @@ class ImageCreate extends React.Component {
   }
 };
 
-export default withApiWatch(ImageCreate);
+export default withApiWatch(withSocket(ImageCreate));

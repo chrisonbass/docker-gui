@@ -15,7 +15,7 @@ class ContainerRun extends React.Component {
     var key = `image-${this.props.args.imageId}`;
     this.props.addApiWatchId("container_run");
     this.props.addApiWatchId(key);
-    if ( !this.props[key] ){
+    if ( this.props[key] ){
       Actions.api(key, `image/inspect/${this.props.args.imageId}`);
     }
     Actions.api("volumes", "volumes");

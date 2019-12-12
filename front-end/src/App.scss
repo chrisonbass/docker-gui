@@ -21,6 +21,7 @@
   text-decoration: none;
 }
 
+.App-footer,
 .App-body {
   text-align: left;
   padding: 0px 20px;
@@ -159,6 +160,15 @@ table.border th:last-child {
 }
 .flex-justify-evenly {
   justify-content: space-evenly;
+}
+.flex-fill {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+
+  > * {
+    flex: 1;
+  }
 }
 .flex-justify-between {
   justify-content: space-between;

@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 var app = null;
 
 export const setApp = (appInstance) => {
@@ -91,9 +93,70 @@ export const api = (id, endpoint, params = {}) => {
   } );
 };
 
+export const getArgsDisplay = () => {
+  var args = Object.assign({}, ( _.get(app.state, "args") || {} ));
+  if ( args.hasOwnProperty("socketOpen") ){
+    delete args.socketOpen;
+  }
+  return JSON.stringify(args, null, 2);
+};
+
+export const outputArgs = (e) => {
+  if ( e && e.preventDefault ){
+    e.preventDefault();
+  }
+  var filename = "args.json";
+  var data = Object.assign({}, app.state.args);
+  if ( data.hasOwnProperty('socketOpen') ){
+    delete data.socketOpen;
+  }
+  data = JSON.stringify(data);
+  var file = new Blob([data], {type: "json"});
+  if (window.navigator.msSaveOrOpenBlob){ // IE10+
+    window.navigator.msSaveOrOpenBlob(file, filename);
+  }
+  else { // Others
+    var a = document.createElement("a"),
+        url = URL.createObjectURL(file);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);  
+    }, 0); 
+  }
+};
+
+export const handleLoadArgs = (e) => {
+  var file = _.get(e, "target.files[0]");
+  if (file) {
+    var reader = new FileReader();
+    reader.readAsText(file, "UTF-8");
+    reader.onload = function (evt) {
+      try {
+        var json = JSON.parse(evt.target.result);
+        var state = Object.assign({}, app.state);
+        state.args = Object.assign({}, state.args, json);
+        state.isLoadArgs = false;
+        setState(state);
+      } catch (e ){
+        console.error(e);
+        setState({isLoadArgs: false});
+      }
+    }
+    reader.onerror = function (evt) {
+      console.error(evt);
+      setState({isLoadArgs: false});
+    }
+  }
+};
+
 export const getInitialState = () => {
   var state = {
     view: "unknown", 
+    isLoadArgs: false,
     args: { }
   };
   var loc = window.location.pathname;
