@@ -2,6 +2,7 @@ import React from 'react';
 import withApiWatch from '../components/withApiWatch';
 import * as Actions from '../actions';
 import Link from '../components/Link';
+import _ from 'lodash';
 import './Images.css';
 
 class Container extends React.Component {
@@ -9,6 +10,10 @@ class Container extends React.Component {
     super(props);
     this.mounted = false;
     this.timer = null;
+    this.stdout = null;
+    if ( this.props.setSocketKey ){
+      this.props.setSocketKey("container-create-directory-backup");
+    }
   }
 
   getId(){
@@ -68,10 +73,11 @@ class Container extends React.Component {
     if ( Array.isArray(container) ){
       container = container[0];
     }
-    var state = container.State ? container.State.Status : null;
-    var stateFieldList = [
-      "Status","Running","Paused","Restarting","Dead"
-    ];
+    var state = container.State ? container.State.Status : null,
+      stateFieldList = [
+        "Status","Running","Paused","Restarting","Dead"
+      ],
+      output = _.get(this.props, "args.output");
     return (
       <div className='Image'>
         <h1>Container {this.props.args.id}</h1>
@@ -177,6 +183,16 @@ class Container extends React.Component {
         { isShowFull === true ? [
           <pre key="details-dump">
             {JSON.stringify(container, null, 2)}
+          </pre>
+        ] : null }
+        { output ? [
+          <p key='blank'></p>,
+          <pre 
+            className="console" 
+            key="console"
+            ref={this.props.stdoutRef}
+          >
+            {output.join("")}
           </pre>
         ] : null }
       </div>

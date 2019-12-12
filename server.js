@@ -19,6 +19,10 @@ const streamCommandline = (ws, type, cmd, params) => {
       params = [];
     }
     var out = spawn(cmd, params);
+    ws.send(JSON.stringify({
+      type: type,
+      data: cmd + " " + params.join(" ") + "\n"
+    }));
     out.on('error', function(e){
       ws.send(JSON.stringify({
         type: type,
@@ -41,7 +45,7 @@ const streamCommandline = (ws, type, cmd, params) => {
     out.on('exit', function(code){
       ws.send(JSON.stringify({
         type: type,
-        data: "Finished with code: " + code,
+        data: "Finished with code: " + code + "\n",
         finished: true
       }));
       resolve();
@@ -113,6 +117,64 @@ socket.on('connection', (ws) => {
               type: "create-volume-backup",
               error: "Missing `name` parameter in request"
             }));
+          }
+          break;
+
+        case "container-create-directory-backup":
+          var t = "container-create-directory-backup",
+            dir = json.sourceDirectory,
+            container = json.containerId;
+          if ( !dir ){
+            ws.send(JSON.stringify({
+              type: "create-volume-backup",
+              error: "Missing `sourceDirectory` parameter in request"
+            }));
+          }
+          else if ( !container ){
+            ws.send(JSON.stringify({
+              type: "create-volume-backup",
+              error: "Missing `containerId` parameter in request"
+            }));
+          }
+          else {
+            var volName = container + "-backup-vol-" + hash(),
+              backupDir = "backup-" + hash(),
+              tmpContainerName = "tmp-" + hash(),
+              imgName = container + "-temp-image-" + hash();
+            streamCommandline(ws, json.type, "docker", ["volume","create",volName])
+            .then(() => {
+              streamCommandline(ws, json.type, "docker", [ "commit", container, imgName ])
+              .then(() => {
+                streamCommandline(ws, json.type, "docker", [
+                  "run",
+                  "-dt",
+                  "--name",
+                  tmpContainerName,
+                  "-v",
+                  volName + ":/" + backupDir,
+                  imgName
+                ])
+                .then(() => {
+                  streamCommandline(ws, json.type, "docker", [
+                    "exec",
+                    tmpContainerName,
+                    "cp",
+                    "-r",
+                    "/" + dir + "/.",
+                    "/" + backupDir + "/"
+                  ])
+                  .then(() => {
+                    streamCommandline(ws, json.type, "docker", ["stop",tmpContainerName])
+                    .then(() => {
+                      streamCommandline(ws, json.type, "docker", ["rm",tmpContainerName])
+                      .then(() => {
+                        streamCommandline(ws, json.type, "docker", ["image", "rm",imgName]);
+                      } )
+                    } )
+                  } )
+                } )
+              } )
+            } );
           }
           break;
       }
