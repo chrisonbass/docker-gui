@@ -62,15 +62,17 @@ class Container extends React.Component {
     var self = this;
     return (e) => {
       e.preventDefault();
-      if ( cmd == "create-dir-backup" ){
+      if ( cmd === "create-dir-backup" ){
         var path = window.prompt("Please enter the full path to the container's folder.","/app");
         if ( path ){
           var volName = window.prompt("Please enter a name for the volume.");
-          this.props.sendMessage({
-            sourceDirectory: path,
-            containerId: this.getId(),
-            volumeName: volName
-          });
+          if ( volName ){
+            this.props.sendMessage({
+              sourceDirectory: path,
+              containerId: this.getId(),
+              volumeName: volName
+            });
+          }
         }
       } else {
         Actions.api("run-command", `container/${self.getId()}/perform/${cmd}`, {

@@ -138,7 +138,7 @@ class ImageCreate extends React.Component {
                         </div>
                         <div className="flex-col" style={{marginRight: "10px"}}>
                           <strong>Value</strong>
-                          <input value={arg.value} onChange={this.getArgChangeListener(index, "value")} />
+                          <textarea value={arg.value} onChange={this.getArgChangeListener(index, "value")} />
                         </div>
                         <a href="void" className="text-danger" onClick={this.getArgChangeListener(index, "delete")}>
                           - Delete

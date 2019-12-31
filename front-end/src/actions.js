@@ -105,7 +105,10 @@ export const outputArgs = (e) => {
   if ( e && e.preventDefault ){
     e.preventDefault();
   }
-  var filename = "args.json";
+  var filename = window.prompt("Enter a filename", "args") || "args";
+  if ( !filename.match(/\.json$/) ){
+    filename += ".json";
+  }
   var data = Object.assign({}, app.state.args);
   if ( data.hasOwnProperty('socketOpen') ){
     delete data.socketOpen;
