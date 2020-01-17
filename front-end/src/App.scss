@@ -21,10 +21,33 @@
   text-decoration: none;
 }
 
-.App-footer,
-.App-body {
+.App-footer {
+  padding: 0px;
+  margin: 0px;
   text-align: left;
-  padding: 0px 20px;
+  display: block;
+}
+
+.App-body {
+  padding: 0px;
+  margin: 0px;
+  text-align: left;
+  display: flex;
+  flex-direction: row;
+
+  > div {
+    box-sizing: border-box;
+    &:first-child {
+      flex-grow: 1;
+      padding: 0px 20px;
+    }
+    &:last-child {
+      width: 40%;
+      min-height: 60vh;
+      max-height: 60vh;
+      overflow: auto;
+    }
+  }
 }
 
 .App-nav {
@@ -226,6 +249,5 @@ a.toggler {
   background-color: #555;
   color: #ccc;
   overflow: auto;
-  max-height: 450px;
-  padding: 8px 10px;
+  padding: 4px 6px;
 }

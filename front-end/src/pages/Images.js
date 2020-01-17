@@ -1,14 +1,25 @@
 import React from 'react';
+import withIPC from '../components/withIPC';
 import Link from '../components/Link';
 import * as Actions from '../actions';
 
 class Images extends React.Component {
+
   componentDidMount(){
-    Actions.api("images", "images");
+    this.props.repeatMessage("process-action", {
+      type: "image-list"
+    } );
+    this.props.sendMessage("process-action", {
+      type: "image-list"
+    } );
+    this.props.onMessage("image-list", (e, args) => {
+      console.log("Images update");
+      Actions.mergeState("images", args);
+    } );
   }
 
   render(){
-    var images = this.props.images || {};
+    var images = this.props.images || [];
     return (
       <div className='Images'>
         <h1>Images</h1>
@@ -20,7 +31,7 @@ class Images extends React.Component {
             </Link>
           </li>
         </ul>
-        { images && images.output ? (
+        { images && images ? (
           <table className="border">
             <thead>
               <tr>
@@ -31,7 +42,7 @@ class Images extends React.Component {
               </tr>
             </thead>
             <tbody>
-              { images.output.map( (image, index) => {
+              { images.map( (image, index) => {
                 if ( !image['IMAGE ID'] ){
                   return null;
                 }
@@ -60,4 +71,4 @@ class Images extends React.Component {
   }
 }
 
-export default Images;
+export default withIPC(Images);

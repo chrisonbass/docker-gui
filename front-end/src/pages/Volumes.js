@@ -1,13 +1,21 @@
 import React from 'react';
 import _ from 'lodash';
 import Link from '../components/Link';
-import withApiWatch from '../components/withApiWatch';
+import withIPC from '../components/withIPC';
 import * as Actions from '../actions';
 
 class Volumes extends React.Component {
   componentDidMount(){
-    this.props.addRepeatingApi("volumes", "volumes");
-    this.props.addApiWatchId("volume-create");
+    this.props.repeatMessage("process-action", {
+      type: "volume-list"
+    });
+    this.props.onMessage("volume-list", (e, args) => {
+      Actions.mergeState("volumes", args);
+    } );
+  }
+
+  componentWillUnmount(){
+    Actions.clearStateKey("volumes");
   }
 
   handleNewVolume(e){
@@ -16,17 +24,17 @@ class Volumes extends React.Component {
     }
     var volumeName = window.prompt("Please enter a name for the Volume.");
     if ( volumeName ){
-      Actions.api("volume-create", "volume/create", {
-        method: "post",
-        body: JSON.stringify({
+      this.props.sendMessage("process-action", {
+        type: "volume-create",
+        request: {
           name: volumeName
-        })
+        }
       } );
     }
   }
 
   render(){
-    var volumes = _.get(this.props, "volumes.output") || [];
+    var volumes = _.get(this.props, "volumes") || [];
     return (
       <div className='Volumes'>
         <h1>Volumes</h1>
@@ -75,4 +83,4 @@ class Volumes extends React.Component {
   }
 }
 
-export default withApiWatch(Volumes);
+export default withIPC(Volumes);

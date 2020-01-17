@@ -1,17 +1,10 @@
 import React from 'react';
-import withApiWatch from '../components/withApiWatch';
-import withSocket from '../components/withSocket';
+import withIPC from '../components/withIPC';
+import FileSelector from '../components/FileSelector';
 import * as Actions from '../actions';
 import _ from 'lodash';
 
 class ImageCreate extends React.Component {
-  constructor(props){
-    super(props); 
-    if ( this.props.setSocketKey ){
-      this.props.setSocketKey("build-image");
-    }
-  }
-
   handleFormSubmit(e){
     if ( e && e.preventDefault ){
       e.preventDefault();
@@ -19,20 +12,20 @@ class ImageCreate extends React.Component {
     var {
       path,
       name,
-      buildArgs,
-      socketOpen
+      buildArgs
     } = this.props.args;
-    if ( path && socketOpen ){
-      this.props.sendMessage({
-        name,
-        path,
-        buildArgs
-      });
+
+    if ( path ){
+      this.props.sendMessage("process-action", {
+        type: "build-image",
+        request: {
+          name,
+          path,
+          buildArgs
+        }
+      } );
     } 
-    else if ( !socketOpen ){
-      Actions.setMessage("Socket is not connected.  Please refresh the page.", "error");
-    }
-    else if ( !path ) {
+    else {
       Actions.setMessage("Please enter a path first.", "error");
     }
   }
@@ -70,9 +63,7 @@ class ImageCreate extends React.Component {
   }
 
   render(){
-    var socketOpen = _.get(this.props,"args.socketOpen") || false,
-      output = _.get(this.props, "args.output"),
-      path = _.get(this.props,"args.path") || "",
+    var path = _.get(this.props,"args.path") || "",
       buildArgs = _.get(this.props, "args.buildArgs"),
       name = _.get(this.props,"args.name") || "";
 
@@ -80,12 +71,6 @@ class ImageCreate extends React.Component {
       <div className="Image-create">
         <h1>Create an Image</h1>
         <p>This page can be used to build an image from a Dockerfile</p>
-        <p>
-          <span className={`toggler danger${(socketOpen === true ? " checked" : "")}`}> 
-            Connection Open
-          </span><br />
-          <em>This page uses WebSockets to stream the output of the build process to this page.  If the indicator above is red, there is no connection.</em><br />
-        </p>
         <form onSubmit={this.handleFormSubmit.bind(this)}>
           <div className="row">
             <div className="col-6">
@@ -111,10 +96,10 @@ class ImageCreate extends React.Component {
                   <strong>Build Directory</strong><br />
                   Please enter the full path of the <strong>directory</strong> where your Dockerfile is located
                 </p>
-                <input 
-                  type="text" 
-                  onChange={(e) => {
-                    Actions.setArg("path", e.target.value);
+                <FileSelector 
+                  type="directory"
+                  onChange={(value) => {
+                    Actions.setArg("path", value);
                   }}
                   value={path}
                 />
@@ -160,15 +145,9 @@ class ImageCreate extends React.Component {
             </div>
           </div>
         </form>
-        { output ? [
-          <p key='blank'></p>,
-          <pre className="console" key="console" ref={this.props.stdoutRef}>
-            {output.join("")}
-          </pre>
-        ] : null }
       </div>
     );
   }
 };
 
-export default withApiWatch(withSocket(ImageCreate));
+export default withIPC(ImageCreate);

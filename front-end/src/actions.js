@@ -2,12 +2,31 @@ import _ from 'lodash';
 
 var app = null;
 
+export const hash = () => {
+  var chars = "abcdef1234567890",
+    str = "";
+  while ( str.length < 10 ){
+    str += chars[parseInt( Math.random() * chars.length, 10 )];
+  }
+  return str;
+};
+
 export const setApp = (appInstance) => {
   app = appInstance;
 };
 
 export const setState = (state = {}) => {
   app.setState(state);
+};
+
+export const getState = () => {
+  return app.state;
+};
+
+export const mergeState = (key, state = {}) => {
+  app.setState(Object.assign({}, app.state, {
+    [key]: state
+  }));
 };
 
 export const clearStateKey = (key) => {
@@ -61,36 +80,6 @@ export const navClickListener = (view, args = {}) => {
       args
     });
   };
-};
-
-export const api = (id, endpoint, params = {}) => {
-  var state = app.state[id] || {};
-  app.setState({
-    [id]: Object.assign({}, state, {
-      isLoading: true
-    } )
-  });
-  fetch( "http://localhost:8085/" + endpoint, Object.assign({}, {
-    method: "GET",
-  }, params) )
-  .then( (res) => {
-    return res.json();
-  } )
-  .then( (json) => {
-    if ( Array.isArray(json) && json.length === 1 ){
-      json = json[0];
-    }
-    app.setState({
-      [id]: json
-    });
-  } )
-  .catch( (err) => {
-    app.setState({
-      [id]: {
-        error: err
-      }
-    });
-  } );
 };
 
 export const getArgsDisplay = () => {
@@ -158,8 +147,9 @@ export const handleLoadArgs = (e) => {
 
 export const getInitialState = () => {
   var state = {
-    view: "unknown", 
+    view: "home", 
     isLoadArgs: false,
+    console: [],
     args: { }
   };
   var loc = window.location.pathname;
@@ -171,7 +161,7 @@ export const getInitialState = () => {
       v: "home"
     },
     {
-      r: /^\/image\/create$/,
+      r: /\/image\/create$/,
       v: "image-create"
     },
     // Matches /image/:id

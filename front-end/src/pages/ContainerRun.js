@@ -1,6 +1,6 @@
 import React from 'react';
 import * as Actions from '../actions';
-import withApiWatch from '../components/withApiWatch';
+import withIPC from '../components/withIPC';
 import _ from 'lodash';
 
 class ContainerRun extends React.Component {
@@ -12,15 +12,44 @@ class ContainerRun extends React.Component {
   }
 
   componentDidMount(){
-    var key = `image-${this.props.args.imageId}`;
-    this.props.addApiWatchId("container_run");
-    this.props.addApiWatchId(key);
-    if ( this.props[key] ){
-      Actions.api(key, `image/inspect/${this.props.args.imageId}`);
-    }
-    Actions.api("volumes", "volumes");
+    var key = this.getKey(),
+      self = this;
+    this.props.onMessage("image-inspect", (e, args) => {
+      Actions.mergeState(key, args);
+    } );
+    this.props.onMessage("volume-list", (e, args) => {
+      Actions.mergeState("volumes", args);
+    } );
+    this.props.onMessage("pick-directory", (e, args) => {
+      var directory = _.get(args,'directory'),
+          mounts = _.get(self.props,'args.mounts'),
+          mountIndex = _.get(args,'request.mountIndex');
+      if ( directory &&  mounts && mounts.length && mounts[mountIndex] ){
+        Actions.setArg("mounts", mounts.map( (m, index) => {
+          if ( index === mountIndex ){
+            m = Object.assign({}, m, {
+              local: directory
+            });
+          }
+          return m;
+        } ) );
+      } 
+    } );
+    this.props.sendMessage("process-action", {
+      type: "image-inspect",
+      request: {
+        id: _.get(this.props,'args.imageId') 
+      }
+    } );
+    this.props.sendMessage("process-action", {
+      type: "volume-list"
+    });
   }
- 
+
+  getKey(){
+    return `image-${this.props.args.imageId}`;
+  }
+
   handleForm(e){
     if ( e && e.preventDefault ){
       e.preventDefault();
@@ -28,7 +57,8 @@ class ContainerRun extends React.Component {
     var args = this.props.args || {},
       options = [],
       mounts = [],
-      volumes = [];
+      volumes = [],
+      imageId = args.imageId;
     var map = {
       flagRm: "--rm",
       flagTty: "-t"
@@ -62,16 +92,17 @@ class ContainerRun extends React.Component {
         }
       } );
     }
-    Actions.api("container_run", `container/run/${this.props.args.imageId}`, {
-      method: "post",
-      body: JSON.stringify({
+    this.props.sendMessage( "process-action", {
+      type: "container-run", 
+      request: {
+        imageId,
         options,
         mounts,
         volumes,
         additionalArgs: args.additionalArgs || "",
         ports: args.ports,
-      })
-    });
+      }
+    } );
   }
 
   addBountMount(e){
@@ -123,7 +154,17 @@ class ContainerRun extends React.Component {
             ports[name.replace(/port_/,'')] = e.target.value;
             Actions.setArg("ports", ports);
           } 
-          else if ( match = name.match(/(mounts|volumes)-(\d+)-(volumeId|local|remote)/) ){
+          else if ( match = name.match(/mounts-(\d+)-local/) ){
+            e.preventDefault();
+            i = match[1];
+            this.props.sendMessage("process-action", {
+              type: "pick-directory",
+              request: {
+                mountIndex: parseInt(i,10)
+              } 
+            } );
+          }
+          else if ( match = name.match(/(mounts|volumes)-(\d+)-(volumeId|remote)/) ){
             argType = match[1];
             i = match[2];
             var type = match[3];
@@ -151,14 +192,14 @@ class ContainerRun extends React.Component {
   }
 
   render(){
-    var imageKey = `image-${this.props.args.imageId}`;
-    var image = this.props[imageKey] || {},
+    var imageKey = this.getKey(),
+      image = _.get(this.props, imageKey) || {},
       args = this.props.args,
-      ports = args.ports || {},
+      ports = _.get(this.props, "args.ports") || {},
       additionalArgs = args.additionalArgs || "",
       mounts = args.mounts || [],
       volumes = args.volumes || [],
-      availableVolumes = _.get(this.props, "volumes.output") || [];
+      availableVolumes = _.get(this.props, "volumes") || [];
     if ( Array.isArray(image) ){
       image = image[0];
     }
@@ -234,7 +275,9 @@ class ContainerRun extends React.Component {
               return (
                 <div key={`vol-${index}`} className="flex-row flex-justify-between">
                   <div>
-                    <input placeholder="local" value={vol.local} onChange={self.inputListener(`mounts-${index}-local`)} />
+                    <button type="button" onClick={self.inputListener(`mounts-${index}-local`)}>
+                      {vol.local || "Select a Local Directory"}
+                    </button>
                   </div>
                   <span>=></span>
                   <div>
@@ -316,4 +359,4 @@ class ContainerRun extends React.Component {
   }
 }
 
-export default withApiWatch(ContainerRun);
+export default withIPC(ContainerRun);

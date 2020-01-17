@@ -1,53 +1,30 @@
 import React from 'react';
-import withApiWatch from '../components/withApiWatch';
-import withSocket from '../components/withSocket';
+import withIPC from '../components/withIPC';
 import * as Actions from '../actions';
 import Link from '../components/Link';
 import _ from 'lodash';
 import './Images.css';
 
 class Container extends React.Component {
-  constructor(props){
-    super(props);
-    this.mounted = false;
-    this.timer = null;
-    this.stdout = null;
-    if ( this.props.setSocketKey ){
-      this.props.setSocketKey("container-create-directory-backup");
-    }
-  }
-
   getId(){
     return this.props.args.id;
   }
 
-  componentDidMount(){
-    this.mounted = true;
-    var id = this.getId(),
-      key = `container-${id}`;
-    this.props.addApiWatchId(key);
-    this.props.addApiWatchId("run-command");
-    Actions.api(key, `container/inspect/${id}`);
-    var self = this;
-    this.timer = setInterval(() => {
-      if ( self.props[key].isLoading === true ){
-        return;
-      }
-      if ( self.props[key].error ){
-        clearInterval(self.timer);
-        self.timer = null;
-        return;
-      }
-      Actions.api(key, `container/inspect/${id}`);
-    }, 1000 );
+  getKey(){
+    return `container-${this.getId()}`;
   }
 
-  componentWillUnmount(){
-    this.mounted = false;
-    if ( this.timer ){
-      clearInterval(this.timer);
-    }
-    this.timer = null;
+  componentDidMount(){
+    var id = this.getId(),
+      key = this.getKey();
+
+    this.props.onMessage("container-inspect", (e, args) => {
+      Actions.mergeState(key, args);
+    } );
+    this.props.repeatMessage("process-action", {
+      type: "container-inspect",
+      id
+    } );
   }
 
   toggleShowFullDetails(e){
@@ -67,40 +44,42 @@ class Container extends React.Component {
         if ( path ){
           var volName = window.prompt("Please enter a name for the volume.");
           if ( volName ){
-            this.props.sendMessage({
-              sourceDirectory: path,
-              containerId: this.getId(),
-              volumeName: volName
-            });
+            this.props.sendMessage("process-action", {
+              type: "container-create-dir-backup", 
+              request: {
+                sourceDirectory: path,
+                volumeName: volName,
+                containerId: this.getId()
+              }
+            } );
           }
         }
       } else {
-        Actions.api("run-command", `container/${self.getId()}/perform/${cmd}`, {
-          method: "post"
+        this.props.sendMessage( "process-action", {
+          type: "container-run-cmd", 
+          request: {
+            id: self.getId(),
+            cmd
+          }
         } );
       }
     };
   }
 
   render(){
-    var container = this.props[`container-${this.getId()}`] || {},
-      isShowFull = this.props.args.isShowFull || false,
-      isSocketOpen = _.get(this.props, "args.socketOpen");
+    var container = _.get(this.props,this.getKey()) || {},
+      isShowFull = _.get(this.props,"args.isShowFull") || false;
     if ( Array.isArray(container) ){
       container = container[0];
     }
     var state = container.State ? container.State.Status : null,
       stateFieldList = [
         "Status","Running","Paused","Restarting","Dead"
-      ],
-      output = _.get(this.props, "args.output");
+      ];
     return (
       <div className='Image'>
         <h1>Container {this.props.args.id}</h1>
         <p>This page show the details and available actions for a Container</p>
-        <span className={`toggler danger${(isSocketOpen === true ? " checked" : "")}`}> 
-          Connection Open
-        </span><br />
         <h2>Details</h2>
         <ul className="inline">
           { state === "exited" ? [
@@ -210,19 +189,9 @@ class Container extends React.Component {
             {JSON.stringify(container, null, 2)}
           </pre>
         ] : null }
-        { output ? [
-          <p key='blank'></p>,
-          <pre 
-            className="console" 
-            key="console"
-            ref={this.props.stdoutRef}
-          >
-            {output.join("")}
-          </pre>
-        ] : null }
       </div>
     );
   }
 }
 
-export default withSocket(withApiWatch(Container));
+export default withIPC(Container);

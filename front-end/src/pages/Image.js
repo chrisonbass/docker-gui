@@ -1,5 +1,5 @@
 import React from 'react';
-import withApiWatch from '../components/withApiWatch';
+import withIPC from '../components/withIPC';
 import * as Actions from '../actions';
 import Link from '../components/Link';
 import _ from 'lodash';
@@ -10,10 +10,30 @@ class Image extends React.Component {
     return this.props.args.id;
   }
 
+  getKey(){
+    return `image-${this.getId()}`;
+  }
+
   componentDidMount(){
-    this.props.addRepeatingApi(`image-${this.getId()}`, `image/inspect/${this.getId()}`);
-    this.props.addApiWatchId(`image-${this.getId()}`);
-    this.props.addApiWatchId(`run-img-command`);
+    var self = this;
+    this.props.onMessage("image-run-command", (e, args) => {
+      Actions.mergeState("run-img-command", args);
+    } );
+    this.props.sendMessage("process-action", {
+      type: "image-inspect",
+      request: {
+        id: this.getId()
+      }
+    } );
+    this.props.repeatMessage("process-action", {
+      type: "image-inspect",
+      request: {
+        id: this.getId()
+      }
+    } );
+    this.props.onMessage("image-inspect", (e, args) => {
+      Actions.mergeState(self.getKey(), args);
+    } );
   }
 
   toggleShowFullDetails(e){
@@ -28,24 +48,26 @@ class Image extends React.Component {
     var self = this;
     return (e) => {
       e.preventDefault();
-      var params = {
-        method: "post"
-      };
+      var options = [];
       if ( cmd === "force-rm" ){
         cmd = "rm";
-        params.body = JSON.stringify({
-          options: ["-f"]
-        });
+        options = ["-f"];
       }
-      Actions.api("run-img-command", `image/${self.getId()}/perform/${cmd}`, params );
+      this.props.sendMessage("process-action", {
+        type: "image-run-command",
+        request: {
+          id: self.getId(),
+          cmd,
+          options
+        }
+      } );
     };
   }
 
   render(){
-    var image = this.props[`image-${this.getId()}`] || {},
-      isLoading = _.get(this.props,`image-${this.getId()}.isLoading`) || false,
+    var image = _.get(this.props,this.getKey()) || {},
       isShowFull = this.props.args.isShowFull || false;
-    if ( Array.isArray(image) ){
+    if ( Array.isArray(image) && image.length ){
       image = image[0]
     }
     return (
@@ -53,9 +75,6 @@ class Image extends React.Component {
         <h1>Image {this.props.args.id}</h1>
         <p>This page show the details and available actions for an Image</p>
         <h2>Details</h2>
-        { isLoading && !image.Size ? (
-          <p>Please wait while the image details is loaded</p>
-        ) : null }
         <ul className="inline">
           <li>
             <Link to={`/container/run/${this.getId()}`}>
@@ -212,4 +231,4 @@ class Image extends React.Component {
   }
 }
 
-export default withApiWatch(Image);
+export default withIPC(Image);

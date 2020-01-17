@@ -1,0 +1,9 @@
+.file-selector {
+  display: flex;
+  > div:last-child {
+    flex-grow: 1;
+    > input {
+      width: 100%;
+    }
+  }
+}

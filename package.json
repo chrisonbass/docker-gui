@@ -1,17 +1,22 @@
 {
-  "name": "docker-gui",
+  "name": "electron-quick-start",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
+  "description": "A minimal Electron application",
+  "main": "main/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "electron ."
   },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.17.1",
-    "ws": "^7.2.0"
+  "repository": "https://github.com/electron/electron-quick-start",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^7.1.7"
   }
 }

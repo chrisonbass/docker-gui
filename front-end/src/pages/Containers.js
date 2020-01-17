@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Actions from '../actions';
 import Link from '../components/Link';
+import withIPC from '../components/withIPC';
 import './Containers.css';
 
 class Containers extends React.Component {
@@ -8,6 +9,7 @@ class Containers extends React.Component {
     super(props);
     this.mounted = false;
     this.timer = null;
+    this.removeContainerListener = null;
   }
 
   getType(){
@@ -17,40 +19,46 @@ class Containers extends React.Component {
   }
 
   componentDidMount(){
-    var type = this.getType();
-    Actions.api("containers", `containers/show/${type}`);
-    this.mounted = true;
     var self = this;
+    this.mounted = true;
+    this.fireMessage();
     this.timer = setInterval(() => {
-      if ( !self.mounted ){
-        clearInterval(self.timer);
-        return;
+      self.fireMessage();
+    }, 1000);
+    this.removeContainerListener = this.props.onMessage("containers-list", (e, args) => {
+      Actions.mergeState("containers", args);
+    } );
+  }
+
+  fireMessage(){
+    this.props.sendMessage("process-action", {
+      type: "containers-list",
+      request: {
+        type: this.getType()
       }
-      Actions.api("containers", `containers/show/${self.getType()}`);
-    }, 3000);
+    } );
   }
 
   componentWillUnmount(){
     this.mounted = false;
+    if ( this.removeContainerListener ){
+      this.removeContainerListener();
+    }
     if ( this.timer ){
       clearInterval(this.timer);
     }
-    this.timer = null;
   }
 
   componentDidUpdate(prevProps){
     var type = this.getType();
     if ( prevProps.args.type !== type ){
-      Actions.api("containers", `containers/show/${type}`);
+      this.fireMessage();
     }
   }
 
   render(){
     var args = this.props.args || {},
       containers = this.props.containers || [];
-    if ( containers.output && containers.output.length ){
-      containers = containers.output;
-    }
     var first = containers.length ? containers[0] : null;
     return (
       <React.Fragment>
@@ -126,4 +134,4 @@ class Containers extends React.Component {
   }
 }
 
-export default Containers;
+export default withIPC(Containers);
