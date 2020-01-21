@@ -61,9 +61,8 @@ const streamCommandline = (ipcMessenger, type, cmd, params) => {
       params = [];
     }
     var out = spawn(cmd, params);
-    console.log(cmd + " " + params.join(' '));
     if ( type === "console" ){
-      //outputConsoleCommand(ipcMessenger, cmd, params);
+      outputConsoleCommand(ipcMessenger, cmd, params);
     }
     out.on('error', function(e){
       ipcMessenger.reply(type, {
@@ -74,12 +73,12 @@ const streamCommandline = (ipcMessenger, type, cmd, params) => {
     });
     out.stdout.on('data', function(data){
       ipcMessenger.reply(type, {
-        data: "\n" + data.toString().trim()
+        data: data.toString()
       });
     } );
     out.stderr.on('data', function(data){
       ipcMessenger.reply(type, {
-        error: "\n" + data.toString().trim()
+        error: data.toString()
       });
     } );
     out.on('exit', function(code){
