@@ -153,7 +153,7 @@ export const getInitialState = () => {
     console: _.get(app,"state.console") || [],
     args: { }
   };
-  var loc = window.location.pathname;
+  var loc = window.appLocation;
   var matchFound = false;
   var matches = [
     // Matches Home Page /

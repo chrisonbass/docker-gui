@@ -22,6 +22,9 @@ function createWindow () {
   // and load the index.html of the app.
   mainWindow.loadFile('static/index.html');
 
+  mainWindow.on('close', function (e) {
+    console.log("Possible Close");
+  } );
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
 

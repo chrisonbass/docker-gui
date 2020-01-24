@@ -6,6 +6,7 @@ import * as Actions from '../actions';
 
 class Volumes extends React.Component {
   componentDidMount(){
+    var self = this;
     this.props.repeatMessage("process-action", {
       type: "volume-list"
     });
@@ -16,7 +17,11 @@ class Volumes extends React.Component {
       }
     });
     this.props.onMessage("volume-list", (e, args) => {
-      Actions.mergeState("volumes", args);
+      if ( Array.isArray(args) ){
+        if ( !_.isEqual(_.get(self.props,"volumes"), args) ){
+          Actions.mergeState("volumes", args);
+        }
+      }
     } );
   }
 
@@ -56,28 +61,24 @@ class Volumes extends React.Component {
           <table className="border">
             <thead>
               <tr>
-                { Object.keys(volumes[0]).map( (col,i) => {
-                  return (
-                    <th key={`col-${col}`}>{col}</th>
-                  );
-                } ) }
+                <th>Volume Name</th>
+                <th>Links</th>
+                <th>Size</th>
               </tr>
             </thead>
             <tbody>
               { volumes.map( (vol, index) => {
                 return (
-                  <tr key={`vol-${index}`}>
-                    { Object.keys(vol).map( (v,i) => {
-                      var val = vol[v];
-                      if ( v === "VOLUME NAME" ){
-                        val = <Link to={`/volume/${vol[v]}`}>{vol[v]}</Link>;
-                      }
-                      return (
-                        <td key={`vol-key-${v}`}>
-                          {val}
-                        </td>
-                      );
-                    } ) }
+                  <tr key={`vol-${vol['VOLUME NAME']}`}>
+                    <td>
+                      <Link to={`/volume/${vol['VOLUME NAME']}`}>{vol['VOLUME NAME']}</Link>
+                    </td>
+                    <td>
+                      {vol['LINKS']}
+                    </td>
+                    <td>
+                      {vol['SIZE']}
+                    </td>
                   </tr>
                 );
               } ) }

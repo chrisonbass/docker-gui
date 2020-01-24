@@ -16,7 +16,7 @@ class Link extends React.Component {
         href: props.href
       } );
     } else {
-      window.history.pushState({}, props.title || "Page Change", props.to);
+      window.appLocation = props.to;
       if ( typeof props.onClick === "function" ){
         props.onClick();
       }
