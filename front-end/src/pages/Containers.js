@@ -5,13 +5,6 @@ import withIPC from '../components/withIPC';
 import './Containers.css';
 
 class Containers extends React.Component {
-  constructor(props){
-    super(props);
-    this.mounted = false;
-    this.timer = null;
-    this.removeContainerListener = null;
-  }
-
   getType(){
     var type = this.props.args || {};
     type = type.type || "all";
@@ -19,13 +12,14 @@ class Containers extends React.Component {
   }
 
   componentDidMount(){
-    var self = this;
-    this.mounted = true;
     this.fireMessage();
-    this.timer = setInterval(() => {
-      self.fireMessage();
-    }, 1000);
-    this.removeContainerListener = this.props.onMessage("containers-list", (e, args) => {
+    this.props.repeatMessage("process-action", {
+      type: "containers-list",
+      request: {
+        type: this.getType()
+      }
+    } );
+    this.props.onMessage("containers-list", (e, args) => {
       Actions.mergeState("containers", args);
     } );
   }
@@ -34,24 +28,14 @@ class Containers extends React.Component {
     this.props.sendMessage("process-action", {
       type: "containers-list",
       request: {
-        type: this.getType()
+        type: this.getType(),
+        firstRun: true
       }
     } );
   }
 
-  componentWillUnmount(){
-    this.mounted = false;
-    if ( this.removeContainerListener ){
-      this.removeContainerListener();
-    }
-    if ( this.timer ){
-      clearInterval(this.timer);
-    }
-  }
-
   componentDidUpdate(prevProps){
-    var type = this.getType();
-    if ( prevProps.args.type !== type ){
+    if ( prevProps.args.type !== this.getType() ){
       this.fireMessage();
     }
   }

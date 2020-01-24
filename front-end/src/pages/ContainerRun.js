@@ -38,7 +38,8 @@ class ContainerRun extends React.Component {
     this.props.sendMessage("process-action", {
       type: "image-inspect",
       request: {
-        id: _.get(this.props,'args.imageId') 
+        id: _.get(this.props,'args.imageId') ,
+        firstRun: true
       }
     } );
     this.props.sendMessage("process-action", {

@@ -146,10 +146,11 @@ export const handleLoadArgs = (e) => {
 };
 
 export const getInitialState = () => {
+  
   var state = {
     view: "home", 
     isLoadArgs: false,
-    console: [],
+    console: _.get(app,"state.console") || [],
     args: { }
   };
   var loc = window.location.pathname;

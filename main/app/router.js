@@ -1,13 +1,6 @@
 const { dialog, ipcMain, shell } = require('electron');
 const spawn = require('child_process').spawn;
 
-const state = {
-  timesImageListed: 0,
-  timesVolumesListed: 0,
-  timesContainersListed: 0,
-  volumesListed: {}
-};
-
 const parseColumnsRows = (body) => {
   var lines = body.split(/\n|\r/);
   var columns = lines.shift().split(/\s{2,}/).map( col => col.trim() );
@@ -40,49 +33,76 @@ const outputConsoleCommand = (messenger, cmd, params) => {
 };
 
 const StreamAccumulator = function(){
-  var output = "";
+  var output = "",
+    hasError = false;
   this.reply = (type, out) => {
     if ( out && out.data ){
-      if ( !out.finished ){
-        output += out.data;
-      }
+      output += out.data;
+    }
+    else if ( out && out.error ){
+      hasError = true;
+      output += out.error;
     }
     else if ( typeof out === "string" ){
       output += out;
     }
   };
   this.isAccumulator = true;
+  this.hasError = () => hasError;
   this.getOutput = () => ("" + output).trim();
 };
 
 const streamCommandline = (ipcMessenger, type, cmd, params) => {
   return new Promise( (resolve, reject) => {
+    var acc = new StreamAccumulator();
     if ( params === undefined ){
       params = [];
     }
-    var out = spawn(cmd, params);
+    params = params.map( v => ("" + v).trim() ).filter( v => v.length );
+    var out = spawn(cmd, params),
+      buffer = "";
     if ( type === "console" ){
       outputConsoleCommand(ipcMessenger, cmd, params);
     }
     out.on('error', function(e){
+      var str = e.toString();
       ipcMessenger.reply(type, {
         type: type,
-        error: e.toString()
+        error: str
       });
+      acc.reply(type, {
+        type: type,
+        error: str
+      });
+      outputConsoleCommand(ipcMessenger, "\n\n", false);
       reject(e);
     });
     out.stdout.on('data', function(data){
+      var str = data.toString();
+      acc.reply(type, {
+        data: str
+      });
       ipcMessenger.reply(type, {
-        data: data.toString()
+        data: str
       });
     } );
     out.stderr.on('data', function(data){
+      var str = data.toString();
+      acc.reply(type, {
+        data: str
+      });
       ipcMessenger.reply(type, {
-        error: data.toString()
+        error: str
       });
     } );
     out.on('exit', function(code){
-      resolve();
+      acc.reply(type, {
+        data: "\n\n"
+      });
+      if ( type === "console" ){
+        outputConsoleCommand(ipcMessenger, "\n\n", false);
+      }
+      resolve(acc.getOutput());
     });
   } );
 };
@@ -103,6 +123,9 @@ exports.default = (mainWindow, ipc) => {
             properties: ['openDirectory']
           });
           if ( directory !== undefined ){
+            if ( Array.isArray(directory) && directory.length === 1 ){
+              directory = directory[0];
+            }
             e.reply(json.id || "pick-directory", {
               directory: directory,
               request: json
@@ -153,6 +176,10 @@ exports.default = (mainWindow, ipc) => {
           streamCommandline(acc, key, cmd, params)
           .then( () => {
             var body = acc.getOutput();
+            if ( json.firstRun === true ){
+              outputConsoleCommand(e, cmd, params);
+              outputConsoleCommand(e, "\n", false);
+            }           
             try {
               body = JSON.parse(body);
               e.reply(key, body);
@@ -182,10 +209,11 @@ exports.default = (mainWindow, ipc) => {
           .then( () => {
             var body = acc.getOutput();
             var listTable = parseColumnsRows(body);
-            if ( state.timesImageListed === 0 ){
-              state.timesImageListed++;
+            if ( json.firstRun === true ){
               outputConsoleCommand(e, cmd, params);
+              outputConsoleCommand(e, "\n", false);
               outputConsoleCommand(e, body, false);
+              outputConsoleCommand(e, "\n\n", false);
             }
             e.reply(key, listTable);
           } )
@@ -194,6 +222,35 @@ exports.default = (mainWindow, ipc) => {
               error: err
             } );
           } );
+          break;
+
+        case "image-run-command":
+          var cmd = "docker",
+            id = json.id,
+            params = ["image"]
+              .concat(("" + json.cmd).split(/\s+/))
+              .concat(json.options);
+          if ( id ){
+            params.push(id);
+            streamCommandline(e, "console", cmd, params)
+            .then( () => {
+              e.reply("image-run-command", Object.assign({},{
+                result: "success"
+              }, json) );
+            } )
+            .catch( () => {
+              e.reply("image-run-command", Object.assign({},{
+                result: "error"
+              }, json) );
+            } );
+          } else {
+            e.reply("console", Object.assign({},{
+              data: "\n ## ERROR ##\n\nNo Image Id Provided\n"
+            }, json) );
+            e.reply("image-run-command", Object.assign({},{
+              result: "error"
+            }, json) );
+          }
           break;
 
         case "volume-list":
@@ -207,10 +264,11 @@ exports.default = (mainWindow, ipc) => {
           .then( () => {
             var body = acc.getOutput();
             var listTable = parseColumnsRows(body);
-            if ( state.timesVolumesListed === 0 ){
-              state.timesVolumesListed++;
+            if ( json.firstRun === true ){
               outputConsoleCommand(e, cmd, params);
+              outputConsoleCommand(e, "\n", false);
               outputConsoleCommand(e, body, false);
+              outputConsoleCommand(e, "\n\n", false);
             }
             e.reply("volume-list", listTable);
           } )
@@ -232,17 +290,16 @@ exports.default = (mainWindow, ipc) => {
           streamCommandline(acc, "volume-info", cmd, params)
           .then( () => {
             var output = acc.getOutput();
-            if ( !state.volumesListed[json.name] ){
-              state.volumesListed[json.name] = true;
+            if ( json.firstRun === true ){
               outputConsoleCommand(e, cmd, params);
+              outputConsoleCommand(e, "\n", false);
               outputConsoleCommand(e, output, false);
+              outputConsoleCommand(e, "\n\n", false);
             }
             try {
               output = JSON.parse(output);
-              console.log(output);
               e.reply("volume-info", output);
             } catch ( exc ) {
-              console.log(exc);
               e.reply("volume-info", exc.toString());
             }
           } )
@@ -341,7 +398,6 @@ exports.default = (mainWindow, ipc) => {
             cmdParams = cmdParams.concat((`${params.additionalArgs}`).trim().split(/\s+/).map( v => v.trim()));
           }
           cmdParams.push(`${imageId}`);
-          cmdParams = cmdParams.map( v => v.trim() ).filter( v => v.length );
           console.log({
             "cmd": cmd,
             "params": cmdParams
@@ -373,10 +429,11 @@ exports.default = (mainWindow, ipc) => {
           .then( () => {
             var body = acc.getOutput();
             var listTable = parseColumnsRows(body);
-            if ( state.timesContainersListed === 0 ){
-              state.timesContainersListed++;
+            if ( json.firstRun === true ){
               outputConsoleCommand(e, cmd, params);
+              outputConsoleCommand(e, "\n", false);
               outputConsoleCommand(e, body, false);
+              outputConsoleCommand(e, "\n\n", false);
             }
             e.reply("containers-list", listTable);
           } )
@@ -385,6 +442,38 @@ exports.default = (mainWindow, ipc) => {
               error: err
             } );
           } );
+          break;
+
+        case "container-inspect":
+          var cmd = "docker",
+            params = [
+              "inspect",
+              json.id
+            ];
+            streamCommandline(e, "noop", cmd, params)
+            .then( (body) => {
+              var res;
+              try {
+                res = JSON.parse(body);
+                res.result = "succes";
+              } catch ( caughtError ){
+                res = { 
+                  result: "error",
+                  error: "Error parsing output" 
+                }; 
+              }
+              if ( json.firstRun === true ){
+                outputConsoleCommand(e,cmd, params);
+                outputConsoleCommand(e,"\n", false);
+              }
+              e.reply("container-inspect", res );
+            } )
+            .catch( (err) => {
+              e.reply("container-inspect", {
+                result: "error",
+                error: err
+              } );
+            } );
           break;
 
         case "container-create-directory-backup":

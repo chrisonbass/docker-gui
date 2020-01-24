@@ -21,8 +21,7 @@ class App extends React.Component {
     super(props);
     /**
      * Create Global access reference to
-     * Main App Wrapper Component
-     */
+     * Main App Wrapper Component */
     Actions.setApp(this);
 
     this.originalPopstateListener = window.onpopstate;
@@ -137,17 +136,18 @@ class App extends React.Component {
             <Link style={{color:"white",textDecoration: "none"}} href="https://github.com/chrisonbass/docker-gui">@ChrisOnBass</Link>
           </p>
         </header>
-        {/** =========== OUTPUT ERROR ============= **/}
-        { this.state.message && ("" + this.state.message).length ? (
-          <div className={`App-msg-${this.state.messageType === "success" ? "success" : "error"}`}>
-            <a href="void" onClick={Actions.clearMessage} className="close">x</a>
-            <pre>
-              {this.state.message}
-            </pre>
-          </div>
-        ) : null }
+
         <div className="App-body">
           <div>
+            {/** =========== OUTPUT ERROR ============= **/}
+            { this.state.message && ("" + this.state.message).length ? (
+              <div className={`App-msg-${this.state.messageType === "success" ? "success" : "error"}`}>
+                <a href="void" onClick={Actions.clearMessage} className="close">x</a>
+                <pre>
+                  {this.state.message}
+                </pre>
+              </div>
+            ) : null }
             { this.route(this.state.view) }
             <p></p>
             <div className="App-footer">
@@ -160,7 +160,7 @@ class App extends React.Component {
                     <input type="file" onChange={Actions.handleLoadArgs} />
                   </div>
                 ) : (
-                  <div>
+                  <div className="args-section">
                     <strong>Current Page Args</strong><br />
                     <button onClick={Actions.outputArgs}>Save Args</button><span>&nbsp;</span>
                     <button onClick={this.handleLoadSwitch.bind(this)}>Load Args</button><br />
@@ -173,7 +173,8 @@ class App extends React.Component {
               </div>
             </div>
           </div>
-          <div className="console">
+          <div className="console" id="app-console">
+
             { this.state.console && this.state.console.length ? (
               <pre>
                 { this.state.console.join(" ") }

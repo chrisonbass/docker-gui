@@ -23,16 +23,25 @@ class Container extends React.Component {
     } );
     this.props.repeatMessage("process-action", {
       type: "container-inspect",
-      id
+      request: {
+        id
+      }
+    } );
+    this.props.sendMessage("process-action", {
+      type: "container-inspect",
+      request: {
+        id,
+        firstRun: true
+      }
     } );
   }
 
-  toggleShowFullDetails(e){
+  dumpRawDetails(e){
     if ( e && e.preventDefault ){
       e.preventDefault();
     }
-    var isShowFull = this.props.args.isShowFull === true ? false : true;
-    Actions.setArg("isShowFull", isShowFull);
+    console.log("Container Raw Details: " + this.getId());
+    console.log( _.get(this.props,this.getKey()) || {} );
   }
 
   containerCommand(cmd){
@@ -67,8 +76,7 @@ class Container extends React.Component {
   }
 
   render(){
-    var container = _.get(this.props,this.getKey()) || {},
-      isShowFull = _.get(this.props,"args.isShowFull") || false;
+    var container = _.get(this.props,this.getKey()) || {};
     if ( Array.isArray(container) ){
       container = container[0];
     }
@@ -125,70 +133,63 @@ class Container extends React.Component {
             </li>
           ) : null }
           <li>
-            <a key="full-link" href="void" onClick={this.toggleShowFullDetails.bind(this)}>
-              { isShowFull ? "Hide Raw Details" : "Show Raw Details" }
+            <a key="full-link" href="void" onClick={this.dumpRawDetails.bind(this)}>
+              Dump Raw Details
             </a> 
           </li>
         </ul>
-        { !isShowFull ? (
-          <table className="border">
-            <thead>
-              <tr>
-                <th>
-                  Name
-                </th>
-                <th>
-                  Value 
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              { state === "running" ? (
-                <tr>
-                  <td>
-                    Started At
-                  </td>
-                  <td>
-                    {container.State.StartedAt}
-                  </td>
-                </tr>
-              ) : null }
-              { container.State ? (
+        <table className="border">
+          <thead>
+            <tr>
+              <th>
+                Name
+              </th>
+              <th>
+                Value 
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            { state === "running" ? (
               <tr>
                 <td>
-                  State
+                  Started At
                 </td>
                 <td>
-                  <ul>
-                    { stateFieldList.map( (field) => {
-                      return (
-                        <li key={field}>
-                          <strong>{field}</strong> : {"" + container.State[field]}
-                        </li>
-                      );
-                    } ) }
-                  </ul>
+                  {container.State.StartedAt}
                 </td>
               </tr>
-              ) : null }
-              { container.Config && container.Config.Image ? (
-              <tr>
-                <td>
-                  Image
-                </td>
-                <td>
-                  <Link to={`/image/${container.Config.Image}`}>{container.Config.Image}</Link>
-                </td>
-              </tr>
-              ) : null }
-            </tbody>
-          </table>
-        ) : null }
-        { isShowFull === true ? [
-          <pre key="details-dump">
-            {JSON.stringify(container, null, 2)}
-          </pre>
-        ] : null }
+            ) : null }
+            { container.State ? (
+            <tr>
+              <td>
+                State
+              </td>
+              <td>
+                <ul>
+                  { stateFieldList.map( (field) => {
+                    return (
+                      <li key={field}>
+                        <strong>{field}</strong> : {"" + container.State[field]}
+                      </li>
+                    );
+                  } ) }
+                </ul>
+              </td>
+            </tr>
+            ) : null }
+            { container.Config && container.Config.Image ? (
+            <tr>
+              <td>
+                Image
+              </td>
+              <td>
+                <Link to={`/image/${container.Config.Image}`}>{container.Config.Image}</Link>
+              </td>
+            </tr>
+            ) : null }
+          </tbody>
+        </table>
       </div>
     );
   }

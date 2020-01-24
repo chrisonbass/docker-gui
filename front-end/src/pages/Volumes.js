@@ -9,6 +9,12 @@ class Volumes extends React.Component {
     this.props.repeatMessage("process-action", {
       type: "volume-list"
     });
+    this.props.sendMessage("process-action", {
+      type: "volume-list",
+      request: {
+        firstRun: true
+      }
+    });
     this.props.onMessage("volume-list", (e, args) => {
       Actions.mergeState("volumes", args);
     } );

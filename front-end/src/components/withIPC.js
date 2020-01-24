@@ -2,12 +2,12 @@ import React from 'react';
 import * as Actions from '../actions';
 import _ from 'lodash';
 
+var stdout = null;
 export default function(WrapperComponent, isBodyWrapper = true){
   return class extends React.Component {
     constructor(props){
       super(props);
       this.type = null;
-      this.stdout = null;
       this.timer = null;
       this.repeats = [];
       this.listeners = [];
@@ -17,6 +17,9 @@ export default function(WrapperComponent, isBodyWrapper = true){
 
     componentDidMount(){
       this.mounted = true;
+      if ( stdout === null ){
+        stdout = document.getElementById("app-console");
+      }
       if ( isBodyWrapper === true ){
         window.electron.ipcRenderer.on('console', this.callback);
       }
@@ -55,7 +58,7 @@ export default function(WrapperComponent, isBodyWrapper = true){
         return;
       }
       this.repeats.forEach( (r) => {
-        this.sendMessage(r.msg, r.args);
+        this.sendMessage(r.msg, r.args, true);
       } );
     }
 
@@ -66,19 +69,22 @@ export default function(WrapperComponent, isBodyWrapper = true){
         if ( Array.isArray(output) ){
           output = output.slice();
           var line = data.data || data.error;
-          console.log("stdout: " + line);
           output.push(line);
           Actions.mergeState("console", output);
         }
       }
       setTimeout( () => {
-        if ( this.stdout ){
-          this.stdout.scrollTop = this.stdout.scrollHeight;
+        if ( stdout ){
+          stdout.scrollTop = stdout.scrollHeight;
         }
       }, 100 );
     }
 
-    sendMessage(msg, args = {}){
+    sendMessage(msg, args = {}, isRepeat = false){
+      if ( isRepeat === false ){
+        console.log("Sending Message: " + msg);
+        console.log(args);
+      }
       window.electron.ipcRenderer.send(msg, args);
     }
 
@@ -86,11 +92,6 @@ export default function(WrapperComponent, isBodyWrapper = true){
       var self = this;
       return (
         <WrapperComponent 
-          stdoutRef={(r) => {
-            if ( r ){
-              self.stdout = r;
-            }
-          }}
           onMessage={(msg, callback) => {
             const cb = (e, args) => {
               if ( typeof callback === "function" ){

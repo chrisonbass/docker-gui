@@ -10,7 +10,10 @@ class Images extends React.Component {
       type: "image-list"
     } );
     this.props.sendMessage("process-action", {
-      type: "image-list"
+      type: "image-list",
+      request: {
+        firstRun: true
+      }
     } );
     this.props.onMessage("image-list", (e, args) => {
       console.log("Images update");
@@ -36,7 +39,7 @@ class Images extends React.Component {
             <thead>
               <tr>
                 <th>Image ID</th>
-                <th>Repository</th>
+                <th>Name</th>
                 <th>Size</th>
                 <th>Created</th>
               </tr>
@@ -52,7 +55,7 @@ class Images extends React.Component {
                       <Link to={`/image/${image['IMAGE ID']}`}>{image['IMAGE ID']}</Link>
                     </td>
                     <td>
-                      {image.REPOSITORY}
+                      {image.REPOSITORY}:{image.TAG}
                     </td>
                     <td>
                       {image.SIZE}

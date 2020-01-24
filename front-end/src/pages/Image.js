@@ -17,12 +17,21 @@ class Image extends React.Component {
   componentDidMount(){
     var self = this;
     this.props.onMessage("image-run-command", (e, args) => {
-      Actions.mergeState("run-img-command", args);
+      if ( args.result !== "success" ){
+        Actions.setMessage("An error occurred while performing that actions", "danger");
+      } else {
+        if ( (_.get(args,"cmd") || "").match(/rm/) ){
+          Actions.setMessage("Image deleted");
+          Actions.setState({view: "images"});
+        }
+      }
+      //Actions.mergeState("run-img-command", args);
     } );
     this.props.sendMessage("process-action", {
       type: "image-inspect",
       request: {
-        id: this.getId()
+        id: this.getId(),
+        firstRun: true
       }
     } );
     this.props.repeatMessage("process-action", {

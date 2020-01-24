@@ -4,23 +4,24 @@ import * as Actions from '../actions';
 import _ from 'lodash';
 
 class Volume extends React.Component {
-  constructor(props){
-    super(props); 
-    var self = this;
-    this.stdout = null;
-  }
-
   componentDidMount(){
-    this.volumeDeleteListener = this.props.onMessage("volume-delete", (e, args) => {
+    this.props.onMessage("volume-delete", (e, args) => {
       Actions.mergeState("volume-delete", args);
     } );
-    this.volumeInfoListener = this.props.onMessage("volume-info", (e, args) => {
+    this.props.onMessage("volume-info", (e, args) => {
       Actions.mergeState("volume-info", args);
     } );
     this.props.repeatMessage("process-action", {
       type: "volume-info",
       request: {
         name: this.getId()
+      }
+    } );
+    this.props.sendMessage("process-action", {
+      type: "volume-info",
+      request: {
+        name: this.getId(),
+        firstRun: true
       }
     } );
   }
