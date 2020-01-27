@@ -23,6 +23,14 @@ export const getState = () => {
   return app.state;
 };
 
+export const setAppSetting = (key, value) => {
+  app.setState({
+    app: Object.assign({}, ( _.get(app.state, "app") || {} ), {
+      [key] : value
+    } )
+  } );
+};
+
 export const mergeState = (key, state = {}) => {
   app.setState(Object.assign({}, app.state, {
     [key]: state
@@ -151,6 +159,9 @@ export const getInitialState = () => {
     view: "home", 
     isLoadArgs: false,
     console: _.get(app,"state.console") || [],
+    app: {
+      consoleOpen: _.get(app,"state.app.consoleOpen") === false ? false : true,
+    },
     args: { }
   };
   var loc = window.location.pathname;

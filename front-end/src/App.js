@@ -1,4 +1,5 @@
 import React from 'react';
+import _ from 'lodash';
 import * as Actions from './actions';
 import Volume from './pages/Volume';
 import Volumes from './pages/Volumes';
@@ -113,8 +114,16 @@ class App extends React.Component {
     });
   }
 
+  toggleConsoleControl(e){
+    if ( e && e.preventDefault ){
+      e.preventDefault();
+    }
+    Actions.setAppSetting("consoleOpen", !_.get(this.state, "app.consoleOpen"));
+  }
+
   render(){
     window.appState = this.state;
+    var app = _.get(this.state, "app") || {};
     return (
       <div className="App">
         <header className="App-header">
@@ -174,7 +183,9 @@ class App extends React.Component {
             </div>
           </div>
           <div className="console" id="app-console">
-
+            <a className={"toggle" + ( app.consoleOpen === false ? " closed" : "" )} href="javascript://void" onClick={this.toggleConsoleControl.bind(this)}>
+              &lt;
+            </a>
             { this.state.console && this.state.console.length ? (
               <pre>
                 { this.state.console.join(" ") }

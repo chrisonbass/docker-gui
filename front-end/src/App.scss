@@ -257,6 +257,20 @@ a.toggler {
   background-color: #555;
   color: #ccc;
   padding: 4px 6px;
+  position: relative;
+
+  > .toggle {
+    position: absolute;
+    display: block;
+    width: 20px;
+    height: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: white;
+    border: solid 1px #ccc;
+    left: -20px;
+    top: 0px;
+  }
 }
 
 .args-section {
