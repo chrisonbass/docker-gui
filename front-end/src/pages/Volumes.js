@@ -4,6 +4,51 @@ import Link from '../components/Link';
 import withIPC from '../components/withIPC';
 import * as Actions from '../actions';
 
+const ModalDialog = (props) => {
+};
+
+const ModalInputDialog = (props) => {
+  var inputRef = null;
+  var submit = (e) => {
+    if ( e && e.preventDefault ){
+      e.preventDefault();
+    }
+    if ( props.onSubmit ){
+      props.onSubmit(inputRef.value);
+    }
+  };
+  var cancel = (e) => {
+    if ( e && e.preventDefault ){
+      e.preventDefault();
+    }
+    if ( props.onCancel ){
+      props.onCancel();
+    }   
+  };
+  return (
+    <div className="dialog">
+      <p>{props.label}</p> 
+      <div>
+        <input 
+          ref={ (r) => {
+            if ( r ){
+              inputRef = r;
+            }
+          } }
+        />
+      </div>
+      <div>
+        <button className="pull-right" type="button" onClick={cancel}>
+          Cancel
+        </button>
+        <button className="pull-right" type="button" onClick={submit}>
+          Submit
+        </button>
+      </div>
+    </div>
+  );
+};
+
 class Volumes extends React.Component {
   componentDidMount(){
     var self = this;
@@ -33,15 +78,23 @@ class Volumes extends React.Component {
     if ( e && e.preventDefault ){
       e.preventDefault();
     }
-    var volumeName = window.prompt("Please enter a name for the Volume.");
-    if ( volumeName ){
-      this.props.sendMessage("process-action", {
-        type: "volume-create",
-        request: {
-          name: volumeName
-        }
-      } );
-    }
+    Actions.modalShow({
+      body: <ModalInputDialog 
+        label="Please enter a name for the Volume."
+        onCancel={Actions.modalHide}
+        onSubmit={(volumeName) => {
+          if ( volumeName ){
+            Actions.modalHide();
+            this.props.sendMessage("process-action", {
+              type: "volume-create",
+              request: {
+                name: volumeName
+              }
+            } );
+          }
+        } }
+      />
+    });
   }
 
   render(){

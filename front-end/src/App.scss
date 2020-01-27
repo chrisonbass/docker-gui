@@ -305,3 +305,71 @@ a.toggler {
     word-wrap: break-word;      
   }
 }
+
+$modal-width: 400px;
+$modal-max-height: calc(100vh - 200px);
+$modal-margin-left: ( -1 * ($modal-width/2) );
+
+.modal {
+  position: fixed;
+  top: -200px;
+  max-height: 150px;
+  width: $modal-width;
+  margin: 0px;
+  display: none;
+  box-shadow: 0px 2px 6px rgba(144,138,138,0.36);
+  background-color: white;
+  border: solid 1px #ccc;
+  text-align: left;
+
+  > .controls {
+    box-sizing: border-box;
+    display: inline-block;
+    position: absolute;
+    top: -1px;
+    right: 4px;
+    a {
+      text-decoration: none;
+      color: #ccc;
+    }
+  }
+
+  > .body {
+    box-sizing: border-box;
+    display: block;
+    padding: 8px 15px;
+  }
+
+  &[data-state="hidden"] {
+    display: none;
+  }
+
+  &[data-state="visible"] {
+    left: 50%;
+    margin-left: $modal-margin-left;
+    top: 100px;
+    display: block;
+    max-height: $modal-max-height;
+    overflow: hidden; 
+  }
+
+  &[data-state="hiding"] {
+    display: block;
+    top: -200px;
+    max-height: 0px;
+    overflow: hidden;
+  }
+
+  &[data-state="showing"] {
+    left: 50%;
+    margin-left: $modal-margin-left;
+    display: block;
+    max-height: 200px;
+    top: -200px;
+    overflow: hidden;
+  }
+}
+
+.pull-right {
+  float: right;
+}

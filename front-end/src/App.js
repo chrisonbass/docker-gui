@@ -198,7 +198,14 @@ class App extends React.Component {
             ) : null } 
           </div>
         </div>
-
+        <div className="modal" data-state={_.get(this.state, "modal.state")}>
+          <div className="controls">
+            <a href="javascript:void" onClick={Actions.modalHide}>X</a>
+          </div>
+          <div className="body">
+            {_.get(this.state, "modal.body") || null}
+          </div>
+        </div>
       </div>
     );
   }

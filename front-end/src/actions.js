@@ -153,12 +153,45 @@ export const handleLoadArgs = (e) => {
   }
 };
 
+export const modalHide = (e = null) => {
+  if ( e && e.preventDefault ){
+    e.preventDefault();
+  }
+  mergeState("modal", {
+    "state" : "hiding"
+  });
+  setTimeout( () => {
+    mergeState("modal", {
+      "state" : "hidden"
+    });
+  }, 10 );
+};
+
+export const modalShow = ( props = {} ) => {
+  mergeState("modal", Object.assign({}, props, {
+    "state" : "showing"
+  } ) );
+  setTimeout( () => {
+    mergeState("modal", Object.assign({}, props, {
+      "state" : "visible"
+    } ) );
+  }, 10 );
+};
+
 export const getInitialState = () => {
   
   var state = {
     view: "home", 
     isLoadArgs: false,
     console: _.get(app,"state.console") || [],
+    modal: {
+      /**
+       * The view state of the Modal
+       * hidden, visible, hiding, showing
+       */
+      state: _.get(app,"state.modal.state") || "hidden",
+      body: _.get(app,"state.modal.isVisible") || null
+    },
     app: {
       consoleOpen: _.get(app,"state.app.consoleOpen") === false ? false : true,
     },
