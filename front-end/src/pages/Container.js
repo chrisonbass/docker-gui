@@ -5,6 +5,13 @@ import Link from '../components/Link';
 import _ from 'lodash';
 import './Images.css';
 
+const statKeys = [
+  "CPU %",
+  "MEM USAGE / LIMIT",
+  "MEM %",
+  "NET I/O"
+];
+
 class Container extends React.Component {
   getId(){
     return this.props.args.id;
@@ -14,9 +21,14 @@ class Container extends React.Component {
     return `container-${this.getId()}`;
   }
 
+  getStatKey(){
+    return this.getKey() + "-stats";
+  }
+
   componentDidMount(){
     var id = this.getId(),
-      key = this.getKey();
+      key = this.getKey(),
+      statKey = this.getStatKey();
 
     this.props.onMessage("container-inspect", (e, args) => {
       Actions.mergeState(key, args);
@@ -32,6 +44,51 @@ class Container extends React.Component {
       request: {
         id,
         firstRun: true
+      }
+    } );
+    this.props.onMessage("container-stats", (e, args) => {
+      if ( Array.isArray(args) && args.length ){
+        Actions.mergeState(statKey, args.shift());
+      }
+    } );
+    this.props.repeatMessage("process-action", {
+      type: "container-stats",
+      request: {
+        id
+      }
+    } );
+    this.props.sendMessage("process-action", {
+      type: "container-stats",
+      request: {
+        id,
+        firstRun: true
+      }
+    } );
+    this.props.onMessage("container-run-cmd", (e, args) => {
+      if ( args.result === "success" ){
+        switch ( args.cmd ){
+          case "start":
+          case "paused":
+          case "restart":
+          case "stop":
+            var label = {
+              start: "Started",
+              stop: "Stopped",
+              paused: "Paused",
+              restart: "Restarted"
+            }
+            Actions.setMessage("Container " + label[args.cmd]);
+            break;
+
+          case "rm":
+            Actions.setState({view: "containers"});
+            Actions.setMessage("Container Removed");
+            break;
+          default:
+            break;
+        }
+      } else {
+        Actions.setMessage("An error may have occurred.  Review terminal output for more details.", "danger");
       }
     } );
   }
@@ -76,9 +133,13 @@ class Container extends React.Component {
   }
 
   render(){
-    var container = _.get(this.props,this.getKey()) || {};
+    var container = _.get(this.props,this.getKey()) || {},
+      stats = _.get(this.props, this.getStatKey()) || null;
     if ( Array.isArray(container) ){
       container = container[0];
+    }
+    if ( Array.isArray(stats) ){
+      stats = stats.shift();
     }
     var state = container.State ? container.State.Status : null,
       stateFieldList = [
@@ -188,6 +249,18 @@ class Container extends React.Component {
               </td>
             </tr>
             ) : null }
+            { stats && stats.NAME ? 
+              statKeys.map( (skey) => (
+                <tr key={`stat-${skey}`}>
+                  <td>
+                    {skey}
+                  </td>
+                  <td>
+                    {stats[skey]}
+                  </td>
+                </tr>
+              ) ) 
+             : null }
           </tbody>
         </table>
       </div>

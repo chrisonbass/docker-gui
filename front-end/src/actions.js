@@ -164,7 +164,7 @@ export const getInitialState = () => {
     },
     args: { }
   };
-  var loc = window.location.pathname;
+  var loc = window.appLocation;
   var matchFound = false;
   var matches = [
     // Matches Home Page /

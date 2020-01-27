@@ -58,7 +58,11 @@ export default function(WrapperComponent, isBodyWrapper = true){
         return;
       }
       this.repeats.forEach( (r) => {
-        this.sendMessage(r.msg, r.args, true);
+        var args = r.args;
+        if ( typeof args === "function" ){
+          args = args();
+        }
+        this.sendMessage(r.msg, args, true);
       } );
     }
 

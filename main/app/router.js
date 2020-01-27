@@ -1,6 +1,9 @@
 const { dialog, ipcMain, shell } = require('electron');
 const spawn = require('child_process').spawn;
 
+var state = {
+  parsingVolumeList: false
+};
 const parseColumnsRows = (body) => {
   var lines = body.split(/\n|\r/);
   var columns = lines.shift().split(/\s{2,}/).map( col => col.trim() );
@@ -59,8 +62,7 @@ const streamCommandline = (ipcMessenger, type, cmd, params) => {
       params = [];
     }
     params = params.map( v => ("" + v).trim() ).filter( v => v.length );
-    var out = spawn(cmd, params),
-      buffer = "";
+    var out = spawn(cmd, params);
     if ( type === "console" ){
       outputConsoleCommand(ipcMessenger, cmd, params);
     }
@@ -254,25 +256,79 @@ exports.default = (mainWindow, ipc) => {
           break;
 
         case "volume-list":
-          var acc = new StreamAccumulator(),
-            cmd = "docker",
+         if ( state.parsingVolumeList === true ){
+            console.log("Ignoring Volume List as it's currently running");
+           return;
+         }
+          console.log("running volume list");
+         state.parsingVolumeList = true;
+          var cmd = "docker",
             params = [
-              "volume",
-              "ls"
+              "system",
+              "df",
+              "-v"
             ];
-          streamCommandline(acc, "volume-list", cmd, params)
-          .then( () => {
-            var body = acc.getOutput();
+          streamCommandline(e, "volume-list", cmd, params)
+          .then( (out) => {
+            var lines = ("" + out).split(/\n|\r/),
+              body = [],
+              started = false,
+              line,
+              i = 0;
+            for( i; i < lines.length; i++ ){
+              line = ("" + lines[i]).trim();
+              if ( line.match(/^VOLUME NAME.*LINKS.*SIZE$/) ){
+                started = true;
+              } else if ( started === false ){
+                continue;
+              }
+              if ( started === true ){
+                if ( line === "" ){
+                  break;
+                } else {
+                  body.push(line);
+                }
+              }
+            }
+            if ( body && body.length ){
+              body = body.join("\n").trim();
+            }
             var listTable = parseColumnsRows(body);
+            if ( Array.isArray(listTable) ){
+              var sortName = (a,b) => {
+                if ( a["VOLUME NAME"] < b["VOLUME NAME"] ){
+                  return -1;
+                }
+                else if ( a["VOLUME NAME"] > b["VOLUME NAME"] ){
+                  return 1;
+                }
+                else {
+                  return 0;
+                }
+              };
+              listTable.sort( (a, b) => {
+                if ( a.LINKS > b.LINKS ){
+                  return -1;
+                }
+                else if ( a.LINKS < b.LINKS ){
+                  return 1;
+                }
+                else if ( a.LINKS === b.LINKS ){
+                  return sortName(a, b);
+                }
+              } );
+            }
             if ( json.firstRun === true ){
               outputConsoleCommand(e, cmd, params);
-              outputConsoleCommand(e, "\n", false);
+              outputConsoleCommand(e, "\n* Partial Output\n", false);
               outputConsoleCommand(e, body, false);
               outputConsoleCommand(e, "\n\n", false);
             }
+            state.parsingVolumeList = false;
             e.reply("volume-list", listTable);
           } )
           .catch( (err) => {
+            state.parsingVolumeList = false;
             e.reply("volume-list", {
               error: err
             } );
@@ -280,25 +336,23 @@ exports.default = (mainWindow, ipc) => {
           break;
 
         case "volume-info":
-          var acc = new StreamAccumulator(),
-            cmd = "docker",
+          var cmd = "docker",
             params = [
               "volume",
               "inspect",
               json.name
             ];
-          streamCommandline(acc, "volume-info", cmd, params)
-          .then( () => {
-            var output = acc.getOutput();
+          streamCommandline(e, "volume-info", cmd, params)
+          .then( (out) => {
             if ( json.firstRun === true ){
               outputConsoleCommand(e, cmd, params);
               outputConsoleCommand(e, "\n", false);
-              outputConsoleCommand(e, output, false);
+              outputConsoleCommand(e, out, false);
               outputConsoleCommand(e, "\n\n", false);
             }
             try {
-              output = JSON.parse(output);
-              e.reply("volume-info", output);
+              var basic = JSON.parse(out);
+              e.reply("volume-info", basic);
             } catch ( exc ) {
               e.reply("volume-info", exc.toString());
             }
@@ -347,6 +401,27 @@ exports.default = (mainWindow, ipc) => {
               error: "Missing `name` parameter in request"
             }));
           }
+          break;
+
+        case "container-run-cmd":
+          var cmd = "docker",
+            params = [ "container" ]
+              .concat( ("" + json.cmd).split(/\s/) )
+              .concat([ json.id ]);
+          streamCommandline(e, "console", cmd, params)
+          .then( (out) => {
+            e.reply(args.type, {
+              result: "success",
+              cmd: json.cmd
+            } );
+          } )
+          .catch( (err) => {
+            e.reply(args.type, {
+              result: "error",
+              cmd: json.cmd,
+              error: err
+            } );
+          } );
           break;
 
         case "container-run":
@@ -473,6 +548,26 @@ exports.default = (mainWindow, ipc) => {
                 result: "error",
                 error: err
               } );
+            } );
+          break;
+
+        case "container-stats":
+          var cmd = "docker",
+            params = [
+              "stats",
+              "--no-stream",
+              json.id
+            ];
+          streamCommandline(e, "noop", cmd, params)
+            .then( (out) => {
+              var table = parseColumnsRows(("" + out).trim());
+              if ( table ){
+                e.reply("container-stats", table);
+              }
+            } )
+            .catch( (err) => {
+              console.log("container stats error");
+              console.error(err);
             } );
           break;
 

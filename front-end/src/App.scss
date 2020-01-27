@@ -28,6 +28,8 @@
   display: block;
 }
 
+$body-width: 50%;
+$body-width-wide: 45%;
 .App-body {
   padding: 0px;
   margin: 0px;
@@ -40,21 +42,21 @@
     box-sizing: border-box;
     margin: 0px;
     vertical-align: top;
+    min-height: calc(100vh - 73px);
     max-height: calc(100vh - 73px);
     overflow: auto;
     &:first-child {
-      width: 55%;
+      width: $body-width;
       @media (min-width: 1000px) { 
-        width: 40%;
+        width: $body-width-wide;
       }
       padding: 0px 20px;
     }
     &:last-child {
-      width: 45%;
+      width: (100 - $body-width);
       @media (min-width: 1000px) { 
-        width: 60%;
+        width: (100 - $body-width-wide);
       }
-      min-height: calc(100vh - 73px);
     }
   }
 }

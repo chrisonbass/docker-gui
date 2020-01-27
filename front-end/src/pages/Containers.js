@@ -4,6 +4,15 @@ import Link from '../components/Link';
 import withIPC from '../components/withIPC';
 import './Containers.css';
 
+var colKeys = [
+  "CONTAINER ID",
+  "NAMES",
+  "STATUS",
+  "PORTS",
+  "CREATED",
+  "IMAGE",
+  "COMMAND"
+];
 class Containers extends React.Component {
   getType(){
     var type = this.props.args || {};
@@ -13,12 +22,12 @@ class Containers extends React.Component {
 
   componentDidMount(){
     this.fireMessage();
-    this.props.repeatMessage("process-action", {
+    this.props.repeatMessage("process-action", () => ( {
       type: "containers-list",
       request: {
         type: this.getType()
       }
-    } );
+    } ) );
     this.props.onMessage("containers-list", (e, args) => {
       Actions.mergeState("containers", args);
     } );
@@ -62,32 +71,24 @@ class Containers extends React.Component {
             <table className="border">
               <thead>
                 <tr>
-                  { Object.keys(first).map( (col) => <th key={col}>{col}</th> ) }
+                  { colKeys.map( (col) => <th key={col}>{col}</th> ) }
                 </tr>
               </thead>
               <tbody>
               { containers.map ( (container, index) => {
-                var total = 0,
-                  emptyCount = 0;
-                Object.keys(container).forEach( (con,i) => {
-                  total++;
-                  if ( !container[con] ){
-                    emptyCount++;
-                  }
-                } );
-                // Skip Empty row
-                if ( total === emptyCount ){
-                  return null;
-                }
                 return (
                   <tr key={`row-${index}`}>
-                    { Object.keys(container).map( (con,i) => {
+                    { colKeys.map( (con,i) => {
                       var v = container[con];
                       if ( con === "IMAGE" ){
                         v = <Link to={`/image/${v}`} className="no-style">{v}</Link>;
                       }
                       else if ( con === "CONTAINER ID" ){
-                        v = <Link to={`/container/${v}`} className="no-style">{v}</Link>;
+                        var p = v;
+                        if ( container['NAMES'] ){
+                          p = container['NAMES'];
+                        }
+                        v = <Link to={`/container/${p}`} className="no-style">{v}</Link>;
                       }
                       else if ( con === "PORTS" && v.length ){
                         v = (
