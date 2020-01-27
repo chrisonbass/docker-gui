@@ -13,3 +13,13 @@ npm start
 ```
 
 From this point you should be able to access the GUI from `http://localhost:8085`
+
+### TODO ###
+- Fix Volume Actions
+  - Modal Dialog Prompt for Vol Create
+  - Remove window.prompt calls (not supported in Electron)
+  - Fix bug in backup creation (hash function missing on backend)
+- Update Container Tables 
+  - Provide Quick actions
+  - Show CPU/Memory usage
+

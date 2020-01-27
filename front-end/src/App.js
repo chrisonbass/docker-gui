@@ -123,7 +123,8 @@ class App extends React.Component {
 
   render(){
     window.appState = this.state;
-    var app = _.get(this.state, "app") || {};
+    var app = _.get(this.state, "app") || {},
+      consoleOpen = app.consoleOpen === true ? true : false;
     return (
       <div className="App">
         <header className="App-header">
@@ -146,8 +147,15 @@ class App extends React.Component {
           </p>
         </header>
 
-        <div className="App-body">
+        <div className={"App-body" + ( consoleOpen === false ? " console-closed" : "" ) }>
           <div>
+            <a className="toggle" href="javascript://void" onClick={this.toggleConsoleControl.bind(this)}>
+              { consoleOpen === true ? ( 
+                <span>X</span>
+               ) : (
+                <span>&lt;</span>
+               ) }
+            </a>
             {/** =========== OUTPUT ERROR ============= **/}
             { this.state.message && ("" + this.state.message).length ? (
               <div className={`App-msg-${this.state.messageType === "success" ? "success" : "error"}`}>
@@ -183,10 +191,7 @@ class App extends React.Component {
             </div>
           </div>
           <div className="console" id="app-console">
-            <a className={"toggle" + ( app.consoleOpen === false ? " closed" : "" )} href="javascript://void" onClick={this.toggleConsoleControl.bind(this)}>
-              &lt;
-            </a>
-            { this.state.console && this.state.console.length ? (
+            { consoleOpen === true && this.state.console && this.state.console.length ? (
               <pre>
                 { this.state.console.join(" ") }
               </pre>
